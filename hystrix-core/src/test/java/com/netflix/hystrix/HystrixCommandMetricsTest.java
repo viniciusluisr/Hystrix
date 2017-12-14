@@ -23,9 +23,9 @@ import com.netflix.hystrix.exception.HystrixBadRequestException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import rx.Observable;
-import rx.Subscriber;
-import rx.observers.SafeSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.observers.SafeSubscriber;
 
 import java.util.ArrayList;
 import java.util.List;

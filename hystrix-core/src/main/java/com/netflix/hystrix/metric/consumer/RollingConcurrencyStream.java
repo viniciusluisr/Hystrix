@@ -18,12 +18,15 @@ package com.netflix.hystrix.metric.consumer;
 import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.metric.HystrixCommandExecutionStarted;
 import com.netflix.hystrix.metric.HystrixEventStream;
-import rx.Observable;
-import rx.Subscription;
-import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.subjects.BehaviorSubject;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.subjects.BehaviorSubject;
+import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,25 +48,25 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class RollingConcurrencyStream {
     private AtomicReference<Subscription> rollingMaxSubscription = new AtomicReference<Subscription>(null);
     private final BehaviorSubject<Integer> rollingMax = BehaviorSubject.create(0);
-    private final Observable<Integer> rollingMaxStream;
+    private final Flowable<Integer> rollingMaxStream;
 
-    private static final Func2<Integer, Integer, Integer> reduceToMax = new Func2<Integer, Integer, Integer>() {
+    private static final BiFunction<Integer, Integer, Integer> reduceToMax = new BiFunction<Integer, Integer, Integer>() {
         @Override
-        public Integer call(Integer a, Integer b) {
+        public Integer apply(Integer a, Integer b) {
             return Math.max(a, b);
         }
     };
 
-    private static final Func1<Observable<Integer>, Observable<Integer>> reduceStreamToMax = new Func1<Observable<Integer>, Observable<Integer>>() {
+    private static final Function<Observable<Integer>, Observable<Integer>> reduceStreamToMax = new Function<Observable<Integer>, Observable<Integer>>() {
         @Override
-        public Observable<Integer> call(Observable<Integer> observedConcurrency) {
-            return observedConcurrency.reduce(0, reduceToMax);
+        public Observable<Integer> apply(Observable<Integer> observedConcurrency) {
+            return observedConcurrency.reduce(0, reduceToMax).toObservable();
         }
     };
 
-    private static final Func1<HystrixCommandExecutionStarted, Integer> getConcurrencyCountFromEvent = new Func1<HystrixCommandExecutionStarted, Integer>() {
+    private static final Function<HystrixCommandExecutionStarted, Integer> getConcurrencyCountFromEvent = new Function<HystrixCommandExecutionStarted, Integer>() {
         @Override
-        public Integer call(HystrixCommandExecutionStarted event) {
+        public Integer apply(HystrixCommandExecutionStarted event) {
             return event.getCurrentConcurrency();
         }
     };
@@ -83,6 +86,7 @@ public abstract class RollingConcurrencyStream {
                 .window(numBuckets, 1)
                 .flatMap(reduceStreamToMax)
                 .share()
+                .toFlowable(BackpressureStrategy.BUFFER)
                 .onBackpressureDrop();
     }
 

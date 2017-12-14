@@ -36,8 +36,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import rx.Observable;
-import rx.functions.Func1;
+import io.reactivex.Observable;
+import io.reactivex.functions.BiFunction;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -93,7 +93,7 @@ public class HystrixMetricsStreamHandlerTest {
         replayAll();
 
         Observable<ServerSentEvent> objectObservable = client.submit(HttpClientRequest.createGet(DEFAULT_HYSTRIX_PREFIX))
-                .flatMap(new Func1<HttpClientResponse<ServerSentEvent>, Observable<? extends ServerSentEvent>>() {
+                .flatMap(new Function<HttpClientResponse<ServerSentEvent>, Observable<? extends ServerSentEvent>>() {
                     @Override
                     public Observable<? extends ServerSentEvent> call(HttpClientResponse<ServerSentEvent> httpClientResponse) {
                         return httpClientResponse.getContent().take(1);

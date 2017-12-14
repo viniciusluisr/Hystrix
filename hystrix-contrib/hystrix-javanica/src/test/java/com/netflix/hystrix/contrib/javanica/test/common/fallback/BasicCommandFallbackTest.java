@@ -30,7 +30,7 @@ import com.netflix.hystrix.exception.HystrixBadRequestException;
 import org.apache.commons.lang3.Validate;
 import org.junit.Before;
 import org.junit.Test;
-import rx.Observable;
+import io.reactivex.Observable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;

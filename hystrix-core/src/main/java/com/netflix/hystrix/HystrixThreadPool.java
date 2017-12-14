@@ -22,14 +22,9 @@ import com.netflix.hystrix.strategy.metrics.HystrixMetricsPublisherFactory;
 import com.netflix.hystrix.strategy.properties.HystrixPropertiesFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Scheduler;
-import rx.functions.Func0;
+import io.reactivex.Scheduler;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * ThreadPool used to executed {@link HystrixCommand#run()} on separate threads when configured to do so with {@link HystrixCommandProperties#executionIsolationStrategy()}.
@@ -55,7 +50,7 @@ public interface HystrixThreadPool {
 
     public Scheduler getScheduler();
 
-    public Scheduler getScheduler(Func0<Boolean> shouldInterruptThread);
+    public Scheduler getScheduler(Callable<Boolean> shouldInterruptThread);
 
     /**
      * Mark when a thread begins executing a command.
@@ -192,7 +187,7 @@ public interface HystrixThreadPool {
         @Override
         public Scheduler getScheduler() {
             //by default, interrupt underlying threads on timeout
-            return getScheduler(new Func0<Boolean>() {
+            return getScheduler(new Callable<Boolean>() {
                 @Override
                 public Boolean call() {
                     return true;
@@ -201,7 +196,7 @@ public interface HystrixThreadPool {
         }
 
         @Override
-        public Scheduler getScheduler(Func0<Boolean> shouldInterruptThread) {
+        public Scheduler getScheduler(Callable<Boolean> shouldInterruptThread) {
             touchConfig();
             return new HystrixContextScheduler(HystrixPlugins.getInstance().getConcurrencyStrategy(), this, shouldInterruptThread);
         }

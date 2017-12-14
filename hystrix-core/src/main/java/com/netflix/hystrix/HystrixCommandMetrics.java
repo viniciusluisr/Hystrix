@@ -26,10 +26,9 @@ import com.netflix.hystrix.metric.consumer.RollingCommandUserLatencyDistribution
 import com.netflix.hystrix.strategy.HystrixPlugins;
 import com.netflix.hystrix.strategy.eventnotifier.HystrixEventNotifier;
 import com.netflix.hystrix.util.HystrixRollingNumberEvent;
+import io.reactivex.functions.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.functions.Func0;
-import rx.functions.Func2;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,9 +45,9 @@ public class HystrixCommandMetrics extends HystrixMetrics {
 
     private static final HystrixEventType[] ALL_EVENT_TYPES = HystrixEventType.values();
 
-    public static final Func2<long[], HystrixCommandCompletion, long[]> appendEventToBucket = new Func2<long[], HystrixCommandCompletion, long[]>() {
+    public static final BiFunction<long[], HystrixCommandCompletion, long[]> appendEventToBucket = new BiFunction<long[], HystrixCommandCompletion, long[]>() {
         @Override
-        public long[] call(long[] initialCountArray, HystrixCommandCompletion execution) {
+        public long[] apply(long[] initialCountArray, HystrixCommandCompletion execution) {
             ExecutionResult.EventCounts eventCounts = execution.getEventCounts();
             for (HystrixEventType eventType: ALL_EVENT_TYPES) {
                 switch (eventType) {
@@ -62,9 +61,9 @@ public class HystrixCommandMetrics extends HystrixMetrics {
         }
     };
 
-    public static final Func2<long[], long[], long[]> bucketAggregator = new Func2<long[], long[], long[]>() {
+    public static final BiFunction<long[], long[], long[]> bucketAggregator = new BiFunction<long[], long[], long[]>() {
         @Override
-        public long[] call(long[] cumulativeEvents, long[] bucketEventCounts) {
+        public long[] apply(long[] cumulativeEvents, long[] bucketEventCounts) {
             for (HystrixEventType eventType: ALL_EVENT_TYPES) {
                 switch (eventType) {
                     case EXCEPTION_THROWN:

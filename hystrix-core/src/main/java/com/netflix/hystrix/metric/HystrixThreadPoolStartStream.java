@@ -16,10 +16,10 @@
 package com.netflix.hystrix.metric;
 
 import com.netflix.hystrix.HystrixThreadPoolKey;
-import rx.Observable;
-import rx.subjects.PublishSubject;
-import rx.subjects.SerializedSubject;
-import rx.subjects.Subject;
+import io.reactivex.Observable;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.SerializedSubject;
+import io.reactivex.subjects.Subject;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

@@ -24,9 +24,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import rx.Observable;
-import rx.functions.Action0;
-import rx.functions.Action1;
+import io.reactivex.Observable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
 
 import com.netflix.hystrix.HystrixCollapser.CollapsedRequest;
 import com.netflix.hystrix.HystrixCollapserProperties;
@@ -171,13 +171,13 @@ public class RequestBatch<BatchReturnType, ResponseType, RequestArgumentType> {
                         // create a new command to handle this batch of requests
                         Observable<BatchReturnType> o = commandCollapser.createObservableCommand(shardRequests);
 
-                        commandCollapser.mapResponseToRequests(o, shardRequests).doOnError(new Action1<Throwable>() {
+                        commandCollapser.mapResponseToRequests(o, shardRequests).doOnError(new Consumer<Throwable>() {
 
                             /**
                              * This handles failed completions
                              */
                             @Override
-                            public void call(Throwable e) {
+                            public void accept(Throwable e) {
                                 // handle Throwable in case anything is thrown so we don't block Observers waiting for onError/onCompleted
                                 Exception ee;
                                 if (e instanceof Exception) {
@@ -199,13 +199,13 @@ public class RequestBatch<BatchReturnType, ResponseType, RequestArgumentType> {
                                 }
                             }
 
-                        }).doOnCompleted(new Action0() {
+                        }).doOnComplete(new Action() {
 
                             /**
                              * This handles successful completions
                              */
                             @Override
-                            public void call() {
+                            public void run() {
                                 // check that all requests had setResponse or setException invoked in case 'mapResponseToRequests' was implemented poorly
                                 Exception e = null;
                                 for (CollapsedRequest<ResponseType, RequestArgumentType> request : shardRequests) {

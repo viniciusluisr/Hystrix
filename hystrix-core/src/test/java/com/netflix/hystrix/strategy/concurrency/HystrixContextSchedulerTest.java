@@ -22,9 +22,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
 
-import rx.Scheduler;
-import rx.functions.Action0;
-import rx.schedulers.Schedulers;
+import io.reactivex.Scheduler;
+import io.reactivex.functions.Action;
+import io.reactivex.schedulers.Schedulers;
 
 public class HystrixContextSchedulerTest {
     

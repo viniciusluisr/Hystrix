@@ -15,24 +15,19 @@
  */
 package com.netflix.hystrix;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.netflix.hystrix.util.Exceptions;
-import rx.Observable;
-import rx.functions.Action0;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.functions.Action;
 
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
-import com.netflix.hystrix.exception.HystrixRuntimeException.FailureType;
 import com.netflix.hystrix.strategy.executionhook.HystrixCommandExecutionHook;
 import com.netflix.hystrix.strategy.properties.HystrixPropertiesStrategy;
-import rx.functions.Func0;
 
 /**
  * Used to wrap code that will execute potentially risky functionality (typically meaning a service call over the network)
@@ -295,7 +290,7 @@ public abstract class HystrixCommand<R> extends AbstractCommand<R> implements Hy
 
     @Override
     final protected Observable<R> getExecutionObservable() {
-        return Observable.defer(new Func0<Observable<R>>() {
+        return Observable.defer(new Callable<ObservableSource<? extends R>>() {
             @Override
             public Observable<R> call() {
                 try {
@@ -304,9 +299,9 @@ public abstract class HystrixCommand<R> extends AbstractCommand<R> implements Hy
                     return Observable.error(ex);
                 }
             }
-        }).doOnSubscribe(new Action0() {
+        }).doOnDispose(new Action() {
             @Override
-            public void call() {
+            public void run() {
                 // Save thread on which we get subscribed so that we can interrupt it later if needed
                 executionThread.set(Thread.currentThread());
             }
@@ -315,7 +310,7 @@ public abstract class HystrixCommand<R> extends AbstractCommand<R> implements Hy
 
     @Override
     final protected Observable<R> getFallbackObservable() {
-        return Observable.defer(new Func0<Observable<R>>() {
+        return Observable.defer(new Callable<Observable<R>>() {
             @Override
             public Observable<R> call() {
                 try {
@@ -375,7 +370,7 @@ public abstract class HystrixCommand<R> extends AbstractCommand<R> implements Hy
          * interruption of the execution thread when the "mayInterrupt" flag of Future.cancel(boolean) is set to true;
          * thus, to comply with the contract of Future, we must wrap around it.
          */
-        final Future<R> delegate = toObservable().toBlocking().toFuture();
+        final Future<R> delegate = toObservable().toFuture();
     	
         final Future<R> f = new Future<R>() {
 

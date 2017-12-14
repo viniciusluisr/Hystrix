@@ -31,8 +31,8 @@ import com.netflix.hystrix.strategy.metrics.HystrixMetricsPublisherThreadPool;
 import org.junit.Before;
 import org.junit.Test;
 
-import rx.Scheduler;
-import rx.functions.Action0;
+import io.reactivex.Scheduler;
+import io.reactivex.functions.Action;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;

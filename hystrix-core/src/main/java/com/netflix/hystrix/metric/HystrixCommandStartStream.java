@@ -16,10 +16,9 @@
 package com.netflix.hystrix.metric;
 
 import com.netflix.hystrix.HystrixCommandKey;
-import rx.Observable;
-import rx.subjects.PublishSubject;
-import rx.subjects.SerializedSubject;
-import rx.subjects.Subject;
+import io.reactivex.Observable;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.Subject;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,7 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 public class HystrixCommandStartStream implements HystrixEventStream<HystrixCommandExecutionStarted> {
     private final HystrixCommandKey commandKey;
 
-    private final Subject<HystrixCommandExecutionStarted, HystrixCommandExecutionStarted> writeOnlySubject;
+    private final Subject<HystrixCommandExecutionStarted> writeOnlySubject;
     private final Observable<HystrixCommandExecutionStarted> readOnlyStream;
 
     private static final ConcurrentMap<String, HystrixCommandStartStream> streams = new ConcurrentHashMap<String, HystrixCommandStartStream>();
@@ -56,8 +55,7 @@ public class HystrixCommandStartStream implements HystrixEventStream<HystrixComm
 
     HystrixCommandStartStream(final HystrixCommandKey commandKey) {
         this.commandKey = commandKey;
-
-        this.writeOnlySubject = new SerializedSubject<HystrixCommandExecutionStarted, HystrixCommandExecutionStarted>(PublishSubject.<HystrixCommandExecutionStarted>create());
+        this.writeOnlySubject = BehaviorSubject.<HystrixCommandExecutionStarted>create().toSerialized();
         this.readOnlyStream = writeOnlySubject.share();
     }
 

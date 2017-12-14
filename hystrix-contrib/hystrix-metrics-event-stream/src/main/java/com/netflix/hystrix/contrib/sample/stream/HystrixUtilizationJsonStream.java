@@ -23,8 +23,8 @@ import com.netflix.hystrix.metric.sample.HystrixCommandUtilization;
 import com.netflix.hystrix.metric.sample.HystrixThreadPoolUtilization;
 import com.netflix.hystrix.metric.sample.HystrixUtilization;
 import com.netflix.hystrix.metric.sample.HystrixUtilizationStream;
-import rx.Observable;
-import rx.functions.Func1;
+import io.reactivex.Observable;
+import io.reactivex.functions.BiFunction;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -41,11 +41,11 @@ import java.util.Map;
  */
 @Deprecated //since 1.5.4
 public class HystrixUtilizationJsonStream {
-    private final Func1<Integer, Observable<HystrixUtilization>> streamGenerator;
+    private final Function<Integer, Observable<HystrixUtilization>> streamGenerator;
 
     private static final JsonFactory jsonFactory = new JsonFactory();
 
-    private static final Func1<HystrixUtilization, String> convertToJsonFunc = new Func1<HystrixUtilization, String>() {
+    private static final Function<HystrixUtilization, String> convertToJsonFunc = new Function<HystrixUtilization, String>() {
         @Override
         public String call(HystrixUtilization utilization) {
             try {
@@ -58,7 +58,7 @@ public class HystrixUtilizationJsonStream {
 
     @Deprecated //since 1.5.4
     public HystrixUtilizationJsonStream() {
-        this.streamGenerator = new Func1<Integer, Observable<HystrixUtilization>>() {
+        this.streamGenerator = new Function<Integer, Observable<HystrixUtilization>>() {
             @Override
             public Observable<HystrixUtilization> call(Integer delay) {
                 return HystrixUtilizationStream.getInstance().observe();
@@ -67,7 +67,7 @@ public class HystrixUtilizationJsonStream {
     }
 
     @Deprecated //since 1.5.4
-    public HystrixUtilizationJsonStream(Func1<Integer, Observable<HystrixUtilization>> streamGenerator) {
+    public HystrixUtilizationJsonStream(Function<Integer, Observable<HystrixUtilization>> streamGenerator) {
         this.streamGenerator = streamGenerator;
     }
 

@@ -17,10 +17,10 @@ package com.netflix.hystrix.metric.consumer;
 
 import com.netflix.hystrix.metric.HystrixEvent;
 import com.netflix.hystrix.metric.HystrixEventStream;
-import rx.Observable;
-import rx.functions.Action0;
-import rx.functions.Func1;
-import rx.functions.Func2;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Function;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,41 +32,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <Output> type of data emitted to stream subscribers (often is the same as A but does not have to be)
  */
 public abstract class BucketedRollingCounterStream<Event extends HystrixEvent, Bucket, Output> extends BucketedCounterStream<Event, Bucket, Output> {
-    private Observable<Output> sourceStream;
+    private Flowable<Output> sourceStream;
     private final AtomicBoolean isSourceCurrentlySubscribed = new AtomicBoolean(false);
 
     protected BucketedRollingCounterStream(HystrixEventStream<Event> stream, final int numBuckets, int bucketSizeInMs,
-                                           final Func2<Bucket, Event, Bucket> appendRawEventToBucket,
-                                           final Func2<Output, Bucket, Output> reduceBucket) {
+                                           final BiFunction<Bucket, Event, Bucket> appendRawEventToBucket,
+                                           final BiFunction<Output, Bucket, Output> reduceBucket) {
         super(stream, numBuckets, bucketSizeInMs, appendRawEventToBucket);
-        Func1<Observable<Bucket>, Observable<Output>> reduceWindowToSummary = new Func1<Observable<Bucket>, Observable<Output>>() {
-            @Override
-            public Observable<Output> call(Observable<Bucket> window) {
-                return window.scan(getEmptyOutputValue(), reduceBucket).skip(numBuckets);
-            }
-        };
+        Function<Flowable<Bucket>, Flowable<Output>> reduceWindowToSummary = window -> window.scan(getEmptyOutputValue(), reduceBucket).skip(numBuckets);
         this.sourceStream = bucketedStream      //stream broken up into buckets
                 .window(numBuckets, 1)          //emit overlapping windows of buckets
                 .flatMap(reduceWindowToSummary) //convert a window of bucket-summaries into a single summary
-                .doOnSubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        isSourceCurrentlySubscribed.set(true);
-                    }
-                })
-                .doOnUnsubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        isSourceCurrentlySubscribed.set(false);
-                    }
-                })
+                .doOnSubscribe(subscription -> isSourceCurrentlySubscribed.set(true))
+                .doOnTerminate(() -> isSourceCurrentlySubscribed.set(false))
                 .share()                        //multiple subscribers should get same data
                 .onBackpressureDrop();          //if there are slow consumers, data should not buffer
     }
 
     @Override
     public Observable<Output> observe() {
-        return sourceStream;
+        return sourceStream.toObservable();
     }
 
     /* package-private */ boolean isSourceCurrentlySubscribed() {

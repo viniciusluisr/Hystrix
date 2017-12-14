@@ -36,7 +36,7 @@ import com.netflix.servo.monitor.MonitorConfig;
 import com.netflix.servo.tag.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.functions.Func0;
+import io.reactivex.functions.Function;
 
 import java.util.ArrayList;
 import java.util.List;

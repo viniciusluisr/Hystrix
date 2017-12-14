@@ -34,17 +34,17 @@ import javax.ws.rs.core.Response;
 
 import org.junit.Test;
 
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.schedulers.Schedulers;
 
 import com.netflix.hystrix.contrib.metrics.HystrixStream;
 import com.netflix.hystrix.contrib.metrics.HystrixStreamingOutputProvider;
 
 public class StreamingOutputProviderTest {
 
-	private final Observable<String> streamOfOnNexts = Observable.interval(100, TimeUnit.MILLISECONDS).map(new Func1<Long, String>() {
+	private final Observable<String> streamOfOnNexts = Observable.interval(100, TimeUnit.MILLISECONDS).map(new Function<Long, String>() {
 		@Override
 		public String call(Long timestamp) {
 			return "test-stream";

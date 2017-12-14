@@ -26,13 +26,13 @@ import com.netflix.hystrix.metric.CommandStreamTest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.functions.Action0;
-import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Func2;
+import io.reactivex.schedulers.Schedulers;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -273,7 +273,7 @@ public class HystrixConfigurationStreamTest extends CommandStreamTest {
         Observable<HystrixConfiguration> slow = stream
                 .observe()
                 .observeOn(Schedulers.newThread())
-                .map(new Func1<HystrixConfiguration, HystrixConfiguration>() {
+                .map(new Function<HystrixConfiguration, HystrixConfiguration>() {
                     @Override
                     public HystrixConfiguration call(HystrixConfiguration config) {
                         try {

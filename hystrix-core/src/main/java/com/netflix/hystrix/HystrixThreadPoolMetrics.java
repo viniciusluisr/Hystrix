@@ -20,16 +20,14 @@ import com.netflix.hystrix.metric.consumer.CumulativeThreadPoolEventCounterStrea
 import com.netflix.hystrix.metric.consumer.RollingThreadPoolMaxConcurrencyStream;
 import com.netflix.hystrix.metric.consumer.RollingThreadPoolEventCounterStream;
 import com.netflix.hystrix.util.HystrixRollingNumberEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import rx.functions.Func0;
-import rx.functions.Func2;
+import io.reactivex.functions.BiFunction;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,7 +48,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
      * Get or create the {@link HystrixThreadPoolMetrics} instance for a given {@link HystrixThreadPoolKey}.
      * <p>
      * This is thread-safe and ensures only 1 {@link HystrixThreadPoolMetrics} per {@link HystrixThreadPoolKey}.
-     * 
+     *
      * @param key
      *            {@link HystrixThreadPoolKey} of {@link HystrixThreadPool} instance requesting the {@link HystrixThreadPoolMetrics}
      * @param threadPool
@@ -80,7 +78,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Get the {@link HystrixThreadPoolMetrics} instance for a given {@link HystrixThreadPoolKey} or null if one does not exist.
-     * 
+     *
      * @param key
      *            {@link HystrixThreadPoolKey} of {@link HystrixThreadPool} instance requesting the {@link HystrixThreadPoolMetrics}
      * @return {@link HystrixThreadPoolMetrics}
@@ -91,7 +89,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * All registered instances of {@link HystrixThreadPoolMetrics}
-     * 
+     *
      * @return {@code Collection<HystrixThreadPoolMetrics>}
      */
     public static Collection<HystrixThreadPoolMetrics> getInstances() {
@@ -109,10 +107,10 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
         return threadPoolMetrics.getCurrentCompletedTaskCount().intValue() > 0;
     }
 
-    public static final Func2<long[], HystrixCommandCompletion, long[]> appendEventToBucket
-            = new Func2<long[], HystrixCommandCompletion, long[]>() {
+    public static final BiFunction<long[], HystrixCommandCompletion, long[]> appendEventToBucket
+            = new BiFunction<long[], HystrixCommandCompletion, long[]>() {
         @Override
-        public long[] call(long[] initialCountArray, HystrixCommandCompletion execution) {
+        public long[] apply(long[] initialCountArray, HystrixCommandCompletion execution) {
             ExecutionResult.EventCounts eventCounts = execution.getEventCounts();
             for (HystrixEventType eventType: ALL_COMMAND_EVENT_TYPES) {
                 long eventCount = eventCounts.getCount(eventType);
@@ -125,9 +123,9 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
         }
     };
 
-    public static final Func2<long[], long[], long[]> counterAggregator = new Func2<long[], long[], long[]>() {
+    public static final BiFunction<long[], long[], long[]> counterAggregator = new BiFunction<long[], long[], long[]>() {
         @Override
-        public long[] call(long[] cumulativeEvents, long[] bucketEventCounts) {
+        public long[] apply(long[] cumulativeEvents, long[] bucketEventCounts) {
             for (int i = 0; i < NUMBER_THREADPOOL_EVENT_TYPES; i++) {
                 cumulativeEvents[i] += bucketEventCounts[i];
             }
@@ -175,7 +173,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * {@link HystrixThreadPoolKey} these metrics represent.
-     * 
+     *
      * @return HystrixThreadPoolKey
      */
     public HystrixThreadPoolKey getThreadPoolKey() {
@@ -184,7 +182,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * {@link HystrixThreadPoolProperties} of the {@link HystrixThreadPool} these metrics represent.
-     * 
+     *
      * @return HystrixThreadPoolProperties
      */
     public HystrixThreadPoolProperties getProperties() {
@@ -193,7 +191,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Value from {@link ThreadPoolExecutor#getActiveCount()}
-     * 
+     *
      * @return Number
      */
     public Number getCurrentActiveCount() {
@@ -202,7 +200,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Value from {@link ThreadPoolExecutor#getCompletedTaskCount()}
-     * 
+     *
      * @return Number
      */
     public Number getCurrentCompletedTaskCount() {
@@ -211,7 +209,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Value from {@link ThreadPoolExecutor#getCorePoolSize()}
-     * 
+     *
      * @return Number
      */
     public Number getCurrentCorePoolSize() {
@@ -220,7 +218,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Value from {@link ThreadPoolExecutor#getLargestPoolSize()}
-     * 
+     *
      * @return Number
      */
     public Number getCurrentLargestPoolSize() {
@@ -229,7 +227,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Value from {@link ThreadPoolExecutor#getMaximumPoolSize()}
-     * 
+     *
      * @return Number
      */
     public Number getCurrentMaximumPoolSize() {
@@ -238,7 +236,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Value from {@link ThreadPoolExecutor#getPoolSize()}
-     * 
+     *
      * @return Number
      */
     public Number getCurrentPoolSize() {
@@ -247,7 +245,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Value from {@link ThreadPoolExecutor#getTaskCount()}
-     * 
+     *
      * @return Number
      */
     public Number getCurrentTaskCount() {
@@ -256,7 +254,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Current size of {@link BlockingQueue} used by the thread-pool
-     * 
+     *
      * @return Number
      */
     public Number getCurrentQueueSize() {
@@ -283,7 +281,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
 
     /**
      * Cumulative count of number of threads executed since the start of the application.
-     * 
+     *
      * @return cumulative count of threads executed
      */
     public long getCumulativeCountThreadsExecuted() {
@@ -339,7 +337,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
      * Rolling max number of active threads during rolling statistical window.
      * <p>
      * The rolling window is defined by {@link HystrixThreadPoolProperties#metricsRollingStatisticalWindowInMilliseconds()}.
-     * 
+     *
      * @return rolling max active threads
      */
     public long getRollingMaxActiveThreads() {
@@ -353,8 +351,8 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
         concurrentExecutionCount.decrementAndGet();
     }
 
-    public static Func0<Integer> getCurrentConcurrencyThunk(final HystrixThreadPoolKey threadPoolKey) {
-        return new Func0<Integer>() {
+    public static Callable<Integer> getCurrentConcurrencyThunk(final HystrixThreadPoolKey threadPoolKey) {
+        return new Callable<Integer>() {
             @Override
             public Integer call() {
                 return HystrixThreadPoolMetrics.getInstance(threadPoolKey).concurrentExecutionCount.get();

@@ -22,10 +22,10 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixEventType;
 import com.netflix.hystrix.HystrixThreadPool;
 import com.netflix.hystrix.HystrixThreadPoolKey;
-import rx.functions.Action1;
-import rx.observers.Subscribers;
-import rx.subjects.PublishSubject;
-import rx.subjects.Subject;
+import io.reactivex.functions.Consumer;
+import io.reactivex.observers.Subscribers;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 
 /**
  * Per-thread event stream.  No synchronization required when writing to it since it's single-threaded.

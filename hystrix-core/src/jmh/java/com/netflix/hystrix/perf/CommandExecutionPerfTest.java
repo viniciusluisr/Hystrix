@@ -34,9 +34,9 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.infra.Blackhole;
-import rx.Observable;
-import rx.functions.Func0;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 import java.util.List;
 import java.util.concurrent.Callable;

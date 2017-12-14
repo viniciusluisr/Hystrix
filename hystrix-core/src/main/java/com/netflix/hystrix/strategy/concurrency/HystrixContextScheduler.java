@@ -17,11 +17,14 @@ package com.netflix.hystrix.strategy.concurrency;
 
 import java.util.concurrent.*;
 
-import rx.*;
-import rx.functions.Action0;
-import rx.functions.Func0;
-import rx.internal.schedulers.ScheduledAction;
-import rx.subscriptions.*;
+import io.reactivex.*;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.disposables.Disposables;
+import io.reactivex.disposables.SerialDisposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Function;
+import io.reactivex.disposables.Disposables.*;
 
 import com.netflix.hystrix.HystrixThreadPool;
 import com.netflix.hystrix.strategy.HystrixPlugins;
@@ -49,7 +52,7 @@ public class HystrixContextScheduler extends Scheduler {
     }
 
     public HystrixContextScheduler(HystrixConcurrencyStrategy concurrencyStrategy, HystrixThreadPool threadPool) {
-        this(concurrencyStrategy, threadPool, new Func0<Boolean>() {
+        this(concurrencyStrategy, threadPool, new Callable<Boolean>() {
             @Override
             public Boolean call() {
                 return true;
@@ -57,7 +60,7 @@ public class HystrixContextScheduler extends Scheduler {
         });
     }
 
-    public HystrixContextScheduler(HystrixConcurrencyStrategy concurrencyStrategy, HystrixThreadPool threadPool, Func0<Boolean> shouldInterruptThread) {
+    public HystrixContextScheduler(HystrixConcurrencyStrategy concurrencyStrategy, HystrixThreadPool threadPool, Callable<Boolean> shouldInterruptThread) {
         this.concurrencyStrategy = concurrencyStrategy;
         this.threadPool = threadPool;
         this.actualScheduler = new ThreadPoolScheduler(threadPool, shouldInterruptThread);
@@ -77,17 +80,17 @@ public class HystrixContextScheduler extends Scheduler {
         }
 
         @Override
-        public void unsubscribe() {
-            worker.unsubscribe();
+        public void dispose() {
+            worker.dispose();
         }
 
         @Override
-        public boolean isUnsubscribed() {
-            return worker.isUnsubscribed();
+        public boolean isDisposed() {
+            return worker.isDisposed();
         }
 
         @Override
-        public Subscription schedule(Action0 action, long delayTime, TimeUnit unit) {
+        public Disposable schedule(Callable action, long delayTime, TimeUnit unit) {
             if (threadPool != null) {
                 if (!threadPool.isQueueSpaceAvailable()) {
                     throw new RejectedExecutionException("Rejected command because thread-pool queueSize is at rejection threshold.");
@@ -97,7 +100,7 @@ public class HystrixContextScheduler extends Scheduler {
         }
 
         @Override
-        public Subscription schedule(Action0 action) {
+        public Disposable schedule(Callable action) {
             if (threadPool != null) {
                 if (!threadPool.isQueueSpaceAvailable()) {
                     throw new RejectedExecutionException("Rejected command because thread-pool queueSize is at rejection threshold.");
@@ -111,9 +114,9 @@ public class HystrixContextScheduler extends Scheduler {
     private static class ThreadPoolScheduler extends Scheduler {
 
         private final HystrixThreadPool threadPool;
-        private final Func0<Boolean> shouldInterruptThread;
+        private final Callable<Boolean> shouldInterruptThread;
 
-        public ThreadPoolScheduler(HystrixThreadPool threadPool, Func0<Boolean> shouldInterruptThread) {
+        public ThreadPoolScheduler(HystrixThreadPool threadPool, Callable<Boolean> shouldInterruptThread) {
             this.threadPool = threadPool;
             this.shouldInterruptThread = shouldInterruptThread;
         }
@@ -137,76 +140,80 @@ public class HystrixContextScheduler extends Scheduler {
     private static class ThreadPoolWorker extends Worker {
 
         private final HystrixThreadPool threadPool;
-        private final CompositeSubscription subscription = new CompositeSubscription();
-        private final Func0<Boolean> shouldInterruptThread;
+        private final CompositeDisposable subscription = new CompositeDisposable();
+        private final Callable<Boolean> shouldInterruptThread;
 
-        public ThreadPoolWorker(HystrixThreadPool threadPool, Func0<Boolean> shouldInterruptThread) {
+        public ThreadPoolWorker(HystrixThreadPool threadPool, Callable<Boolean> shouldInterruptThread) {
             this.threadPool = threadPool;
             this.shouldInterruptThread = shouldInterruptThread;
         }
 
         @Override
-        public void unsubscribe() {
-            subscription.unsubscribe();
+        public void dispose() {
+            subscription.dispose();
         }
 
         @Override
-        public boolean isUnsubscribed() {
-            return subscription.isUnsubscribed();
+        public boolean isDisposed() {
+            return subscription.isDisposed();
         }
 
-        @Override
-        public Subscription schedule(final Action0 action) {
-            if (subscription.isUnsubscribed()) {
+        public Disposable schedule(final Action action) {
+            if (subscription.isDisposed()) {
                 // don't schedule, we are unsubscribed
-                return Subscriptions.unsubscribed();
+                return Disposables.disposed();
             }
 
             // This is internal RxJava API but it is too useful.
-            ScheduledAction sa = new ScheduledAction(action);
+            CompositeDisposable sa = (CompositeDisposable) Disposables.fromAction(action);
 
             subscription.add(sa);
-            sa.addParent(subscription);
+
+            sa.add(subscription);
 
             ThreadPoolExecutor executor = (ThreadPoolExecutor) threadPool.getExecutor();
-            FutureTask<?> f = (FutureTask<?>) executor.submit(sa);
+            FutureTask<?> f = (FutureTask<?>) executor.submit(() -> sa);
             sa.add(new FutureCompleterWithConfigurableInterrupt(f, shouldInterruptThread, executor));
 
             return sa;
         }
 
         @Override
-        public Subscription schedule(Action0 action, long delayTime, TimeUnit unit) {
+        public Disposable schedule(Runnable action, long delayTime, TimeUnit unit) {
             throw new IllegalStateException("Hystrix does not support delayed scheduling");
         }
     }
 
     /**
-     * Very similar to rx.internal.schedulers.ScheduledAction.FutureCompleter, but with configurable interrupt behavior
+     * Very similar to io.reactivex.internal.schedulers.ScheduledAction.FutureCompleter, but with configurable interrupt behavior
      */
-    private static class FutureCompleterWithConfigurableInterrupt implements Subscription {
+    private static class FutureCompleterWithConfigurableInterrupt implements Disposable {
         private final FutureTask<?> f;
-        private final Func0<Boolean> shouldInterruptThread;
+        private final Callable<Boolean> shouldInterruptThread;
         private final ThreadPoolExecutor executor;
 
-        private FutureCompleterWithConfigurableInterrupt(FutureTask<?> f, Func0<Boolean> shouldInterruptThread, ThreadPoolExecutor executor) {
+        private FutureCompleterWithConfigurableInterrupt(FutureTask<?> f, Callable<Boolean> shouldInterruptThread, ThreadPoolExecutor executor) {
             this.f = f;
             this.shouldInterruptThread = shouldInterruptThread;
             this.executor = executor;
         }
 
         @Override
-        public void unsubscribe() {
+        public void dispose() {
             executor.remove(f);
-            if (shouldInterruptThread.call()) {
-                f.cancel(true);
-            } else {
-                f.cancel(false);
+            try {
+                if (shouldInterruptThread.call()) {
+                    f.cancel(true);
+                } else {
+                    f.cancel(false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
         @Override
-        public boolean isUnsubscribed() {
+        public boolean isDisposed() {
             return f.isCancelled();
         }
     }

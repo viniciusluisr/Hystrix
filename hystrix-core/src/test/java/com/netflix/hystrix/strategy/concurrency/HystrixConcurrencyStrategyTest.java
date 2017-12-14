@@ -27,8 +27,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import rx.functions.Action1;
-import rx.functions.Func1;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.BiFunction;
 
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.HystrixCommand;
@@ -58,7 +58,7 @@ public class HystrixConcurrencyStrategyTest {
     @Test
     public void testRequestContextPropagatesAcrossObserveOnPool() {
         new SimpleCommand().execute();
-        new SimpleCommand().observe().map(new Func1<String, String>() {
+        new SimpleCommand().observe().map(new Function<String, String>() {
 
             @Override
             public String call(String s) {

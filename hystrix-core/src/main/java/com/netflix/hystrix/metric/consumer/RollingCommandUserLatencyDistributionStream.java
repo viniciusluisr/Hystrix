@@ -24,7 +24,7 @@ import com.netflix.hystrix.metric.HystrixCommandCompletion;
 import com.netflix.hystrix.metric.HystrixCommandCompletionStream;
 import com.netflix.hystrix.metric.HystrixCommandEvent;
 import org.HdrHistogram.Histogram;
-import rx.functions.Func2;
+import io.reactivex.functions.BiFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -51,14 +51,11 @@ import java.util.concurrent.ConcurrentMap;
 public class RollingCommandUserLatencyDistributionStream extends RollingDistributionStream<HystrixCommandCompletion> {
     private static final ConcurrentMap<String, RollingCommandUserLatencyDistributionStream> streams = new ConcurrentHashMap<String, RollingCommandUserLatencyDistributionStream>();
 
-    private static final Func2<Histogram, HystrixCommandCompletion, Histogram> addValuesToBucket = new Func2<Histogram, HystrixCommandCompletion, Histogram>() {
-        @Override
-        public Histogram call(Histogram initialDistribution, HystrixCommandCompletion event) {
-            if (event.didCommandExecute() && event.getTotalLatency() > -1) {
-                initialDistribution.recordValue(event.getTotalLatency());
-            }
-            return initialDistribution;
+    private static final BiFunction<Histogram, HystrixCommandCompletion, Histogram> addValuesToBucket = (initialDistribution, event) -> {
+        if (event.didCommandExecute() && event.getTotalLatency() > -1) {
+            initialDistribution.recordValue(event.getTotalLatency());
         }
+        return initialDistribution;
     };
 
     public static RollingCommandUserLatencyDistributionStream getInstance(HystrixCommandKey commandKey, HystrixCommandProperties properties) {

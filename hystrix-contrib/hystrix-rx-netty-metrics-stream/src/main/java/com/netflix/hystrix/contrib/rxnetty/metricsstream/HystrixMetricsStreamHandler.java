@@ -24,12 +24,12 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.reactivex.netty.protocol.http.server.HttpServerRequest;
 import io.reactivex.netty.protocol.http.server.HttpServerResponse;
 import io.reactivex.netty.protocol.http.server.RequestHandler;
-import rx.Observable;
-import rx.Subscription;
-import rx.functions.Action1;
-import rx.subjects.PublishSubject;
-import rx.subjects.Subject;
-import rx.subscriptions.MultipleAssignmentSubscription;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
+import io.reactivex.disposables.Disposables.MultipleAssignmentSubscription;
 
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;

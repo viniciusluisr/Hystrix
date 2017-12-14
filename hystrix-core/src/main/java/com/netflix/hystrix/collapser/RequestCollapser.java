@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 import com.netflix.hystrix.HystrixCollapserProperties;
 import com.netflix.hystrix.strategy.concurrency.HystrixConcurrencyStrategy;

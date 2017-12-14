@@ -29,9 +29,9 @@ import javax.ws.rs.ext.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import rx.Subscriber;
-import rx.Subscription;
-import rx.schedulers.Schedulers;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * {@link MessageBodyWriter} implementation which handles serialization of HystrixStream

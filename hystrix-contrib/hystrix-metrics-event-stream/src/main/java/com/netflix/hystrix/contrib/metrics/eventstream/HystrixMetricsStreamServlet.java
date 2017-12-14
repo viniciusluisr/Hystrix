@@ -20,8 +20,8 @@ import com.netflix.config.DynamicPropertyFactory;
 import com.netflix.hystrix.contrib.sample.stream.HystrixSampleSseServlet;
 import com.netflix.hystrix.metric.consumer.HystrixDashboardStream;
 import com.netflix.hystrix.serial.SerialHystrixDashboardData;
-import rx.Observable;
-import rx.functions.Func1;
+import io.reactivex.Observable;
+import io.reactivex.functions.BiFunction;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -60,7 +60,7 @@ public class HystrixMetricsStreamServlet extends HystrixSampleSseServlet {
     }
 
     /* package-private */ HystrixMetricsStreamServlet(Observable<HystrixDashboardStream.DashboardData> sampleStream, int pausePollerThreadDelayInMs) {
-        super(sampleStream.concatMap(new Func1<HystrixDashboardStream.DashboardData, Observable<String>>() {
+        super(sampleStream.concatMap(new Function<HystrixDashboardStream.DashboardData, Observable<String>>() {
             @Override
             public Observable<String> call(HystrixDashboardStream.DashboardData dashboardData) {
                 return Observable.from(SerialHystrixDashboardData.toMultipleJsonStrings(dashboardData));

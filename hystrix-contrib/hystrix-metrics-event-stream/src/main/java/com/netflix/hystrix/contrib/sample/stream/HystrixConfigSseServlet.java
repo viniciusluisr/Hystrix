@@ -20,8 +20,8 @@ import com.netflix.config.DynamicPropertyFactory;
 import com.netflix.hystrix.config.HystrixConfiguration;
 import com.netflix.hystrix.config.HystrixConfigurationStream;
 import com.netflix.hystrix.serial.SerialHystrixConfiguration;
-import rx.Observable;
-import rx.functions.Func1;
+import io.reactivex.Observable;
+import io.reactivex.functions.BiFunction;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -59,7 +59,7 @@ public class HystrixConfigSseServlet extends HystrixSampleSseServlet {
     }
 
     /* package-private */ HystrixConfigSseServlet(Observable<HystrixConfiguration> sampleStream, int pausePollerThreadDelayInMs) {
-        super(sampleStream.map(new Func1<HystrixConfiguration, String>() {
+        super(sampleStream.map(new Function<HystrixConfiguration, String>() {
             @Override
             public String call(HystrixConfiguration hystrixConfiguration) {
                 return SerialHystrixConfiguration.toJsonString(hystrixConfiguration);

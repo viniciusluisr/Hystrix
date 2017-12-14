@@ -17,15 +17,19 @@ package com.netflix.hystrix.metric.consumer;
 
 import com.netflix.hystrix.metric.HystrixEvent;
 import com.netflix.hystrix.metric.HystrixEventStream;
-import rx.Observable;
-import rx.Subscription;
-import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.subjects.BehaviorSubject;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.subjects.BehaviorSubject;
+import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -38,37 +42,30 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class BucketedCounterStream<Event extends HystrixEvent, Bucket, Output> {
     protected final int numBuckets;
-    protected final Observable<Bucket> bucketedStream;
-    protected final AtomicReference<Subscription> subscription = new AtomicReference<Subscription>(null);
+    protected final Flowable<Bucket> bucketedStream;
+    protected final AtomicReference<Subscription> subscription = new AtomicReference<>(null);
 
-    private final Func1<Observable<Event>, Observable<Bucket>> reduceBucketToSummary;
+    private final Function<Flowable<Event>, Flowable<Bucket>> reduceBucketToSummary;
 
     private final BehaviorSubject<Output> counterSubject = BehaviorSubject.create(getEmptyOutputValue());
 
     protected BucketedCounterStream(final HystrixEventStream<Event> inputEventStream, final int numBuckets, final int bucketSizeInMs,
-                                    final Func2<Bucket, Event, Bucket> appendRawEventToBucket) {
+                                    final BiFunction<Bucket, Event, Bucket> appendRawEventToBucket) {
         this.numBuckets = numBuckets;
-        this.reduceBucketToSummary = new Func1<Observable<Event>, Observable<Bucket>>() {
-            @Override
-            public Observable<Bucket> call(Observable<Event> eventBucket) {
-                return eventBucket.reduce(getEmptyBucketSummary(), appendRawEventToBucket);
-            }
-        };
+        this.reduceBucketToSummary = (Function<Observable<Event>, Observable<Bucket>>) eventBucket -> eventBucket.reduce(getEmptyBucketSummary(), appendRawEventToBucket);
 
-        final List<Bucket> emptyEventCountsToStart = new ArrayList<Bucket>();
+        final List<Bucket> emptyEventCountsToStart = new ArrayList<>();
         for (int i = 0; i < numBuckets; i++) {
             emptyEventCountsToStart.add(getEmptyBucketSummary());
         }
 
-        this.bucketedStream = Observable.defer(new Func0<Observable<Bucket>>() {
-            @Override
-            public Observable<Bucket> call() {
-                return inputEventStream
-                        .observe()
-                        .window(bucketSizeInMs, TimeUnit.MILLISECONDS) //bucket it by the counter window so we can emit to the next operator in time chunks, not on every OnNext
-                        .flatMap(reduceBucketToSummary)                //for a given bucket, turn it into a long array containing counts of event types
-                        .startWith(emptyEventCountsToStart);           //start it with empty arrays to make consumer logic as generic as possible (windows are always full)
-            }
+        this.bucketedStream = Flowable.defer(() -> {
+            return inputEventStream
+                    .observe()
+                    .toFlowable(BackpressureStrategy.BUFFER)
+                    .window(bucketSizeInMs, TimeUnit.MILLISECONDS) //bucket it by the counter window so we can emit to the next operator in time chunks, not on every OnNext
+                    .flatMap(reduceBucketToSummary)                //for a given bucket, turn it into a long array containing counts of event types
+                    .startWith(emptyEventCountsToStart);           //start it with empty arrays to make consumer logic as generic as possible (windows are always full)
         });
     }
 

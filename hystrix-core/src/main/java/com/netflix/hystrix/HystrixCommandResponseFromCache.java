@@ -1,8 +1,8 @@
 package com.netflix.hystrix;
 
-import rx.Observable;
-import rx.functions.Action0;
-import rx.functions.Action1;
+import io.reactivex.Observable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -18,25 +18,25 @@ public class HystrixCommandResponseFromCache<R> extends HystrixCachedObservable<
         final AtomicBoolean completionLogicRun = new AtomicBoolean(false);
 
         return cachedObservable
-                .doOnError(new Action1<Throwable>() {
+                .doOnError(new Consumer<Throwable>() {
                     @Override
-                    public void call(Throwable throwable) {
+                    public void accept(Throwable throwable) {
                         if (completionLogicRun.compareAndSet(false, true)) {
                             commandCompleted(commandToCopyStateInto);
                         }
                     }
                 })
-                .doOnCompleted(new Action0() {
+                .doOnComplete(new Action() {
                     @Override
-                    public void call() {
+                    public void run() {
                         if (completionLogicRun.compareAndSet(false, true)) {
                             commandCompleted(commandToCopyStateInto);
                         }
                     }
                 })
-                .doOnUnsubscribe(new Action0() {
+                .doOnDispose(new Action() {
                     @Override
-                    public void call() {
+                    public void run() {
                         if (completionLogicRun.compareAndSet(false, true)) {
                             commandUnsubscribed(commandToCopyStateInto);
                         }

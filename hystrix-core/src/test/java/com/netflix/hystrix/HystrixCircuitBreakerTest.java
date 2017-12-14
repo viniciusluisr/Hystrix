@@ -31,8 +31,8 @@ import org.junit.Test;
 import com.netflix.hystrix.HystrixCircuitBreaker.HystrixCircuitBreakerImpl;
 import com.netflix.hystrix.strategy.HystrixPlugins;
 import com.netflix.hystrix.strategy.executionhook.HystrixCommandExecutionHook;
-import rx.Observable;
-import rx.Subscription;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
 
 /**
  * These tests each use a different command key to ensure that running them in parallel doesn't allow the state

@@ -17,7 +17,7 @@ package com.netflix.hystrix.contrib.metrics;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * @author justinjose28

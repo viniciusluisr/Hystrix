@@ -42,15 +42,15 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import rx.Observable;
-import rx.Observable.OnSubscribe;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.observers.TestSubscriber;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Observable.OnSubscribe;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.observers.TestSubscriber;
+import io.reactivex.schedulers.Schedulers;
 
 import com.netflix.hystrix.HystrixCollapser.CollapsedRequest;
 import com.netflix.hystrix.HystrixCollapserTest.TestCollapserTimer;
@@ -94,7 +94,7 @@ public class HystrixObservableCollapserTest {
         }
     };
 
-    private static Func1<String, String> prefixMapper = new Func1<String, String>() {
+    private static Function<String, String> prefixMapper = new Function<String, String>() {
 
         @Override
         public String call(String s) {
@@ -103,7 +103,7 @@ public class HystrixObservableCollapserTest {
 
     };
 
-    private static Func1<String, String> map1To3And2To2 = new Func1<String, String>() {
+    private static Function<String, String> map1To3And2To2 = new Function<String, String>() {
         @Override
         public String call(String s) {
             String prefix = s.substring(0, s.indexOf(":"));
@@ -115,7 +115,7 @@ public class HystrixObservableCollapserTest {
         }
     };
 
-    private static Func1<String, String> mapWithErrorOn1 = new Func1<String, String>() {
+    private static Function<String, String> mapWithErrorOn1 = new Function<String, String>() {
         @Override
         public String call(String s) {
             String prefix = s.substring(0, s.indexOf(":"));
@@ -1365,7 +1365,7 @@ public class HystrixObservableCollapserTest {
 
         @Override
         protected Observable<Pair<String, Integer>> construct() {
-            return Observable.from(args).map(new Func1<String, Pair<String, Integer>>() {
+            return Observable.from(args).map(new Function<String, Pair<String, Integer>>() {
                 @Override
                 public Pair<String, Integer> call(String s) {
                     return new Pair<String, Integer>(s, Integer.parseInt(s));
@@ -1406,8 +1406,8 @@ public class HystrixObservableCollapserTest {
         }
 
         @Override
-        protected Func1<Pair<String, Integer>, String> getBatchReturnTypeKeySelector() {
-            return new Func1<Pair<String, Integer>, String>() {
+        protected Function<Pair<String, Integer>, String> getBatchReturnTypeKeySelector() {
+            return new Function<Pair<String, Integer>, String>() {
                 @Override
                 public String call(Pair<String, Integer> pair) {
                     return pair.a;
@@ -1416,8 +1416,8 @@ public class HystrixObservableCollapserTest {
         }
 
         @Override
-        protected Func1<String, String> getRequestArgumentKeySelector() {
-            return new Func1<String, String>() {
+        protected Function<String, String> getRequestArgumentKeySelector() {
+            return new Function<String, String>() {
                 @Override
                 public String call(String s) {
                     return s;
@@ -1431,8 +1431,8 @@ public class HystrixObservableCollapserTest {
         }
 
         @Override
-        protected Func1<Pair<String, Integer>, Integer> getBatchReturnTypeToResponseTypeMapper() {
-            return new Func1<Pair<String, Integer>, Integer>() {
+        protected Function<Pair<String, Integer>, Integer> getBatchReturnTypeToResponseTypeMapper() {
+            return new Function<Pair<String, Integer>, Integer>() {
                 @Override
                 public Integer call(Pair<String, Integer> pair) {
                     return pair.b;
@@ -1613,8 +1613,8 @@ public class HystrixObservableCollapserTest {
         }
 
         @Override
-        protected Func1<String, String> getBatchReturnTypeToResponseTypeMapper() {
-            return new Func1<String, String>() {
+        protected Function<String, String> getBatchReturnTypeToResponseTypeMapper() {
+            return new Function<String, String>() {
 
                 @Override
                 public String call(String s) {
@@ -1625,8 +1625,8 @@ public class HystrixObservableCollapserTest {
         }
 
         @Override
-        protected Func1<String, String> getBatchReturnTypeKeySelector() {
-            return new Func1<String, String>() {
+        protected Function<String, String> getBatchReturnTypeKeySelector() {
+            return new Function<String, String>() {
 
                 @Override
                 public String call(String s) {
@@ -1637,8 +1637,8 @@ public class HystrixObservableCollapserTest {
         }
 
         @Override
-        protected Func1<String, String> getRequestArgumentKeySelector() {
-            return new Func1<String, String>() {
+        protected Function<String, String> getRequestArgumentKeySelector() {
+            return new Function<String, String>() {
 
                 @Override
                 public String call(String s) {
@@ -1710,7 +1710,7 @@ public class HystrixObservableCollapserTest {
         private final static ConcurrentMap<String, Integer> emitsPerArg;
         private final boolean commandConstructionFails;
         private final boolean commandExecutionFails;
-        private final Func1<String, String> keyMapper;
+        private final Function<String, String> keyMapper;
         private final Action1<CollapsedRequest<String, String>> onMissingResponseHandler;
 
         private final static HystrixCollapserKey key = HystrixCollapserKey.Factory.asKey("COLLAPSER_MULTI");
@@ -1729,11 +1729,11 @@ public class HystrixObservableCollapserTest {
             this(timer, arg, numEmits, false, false, prefixMapper, onMissingHandler);
         }
 
-        public TestCollapserWithMultipleResponses(CollapserTimer timer, int arg, int numEmits, Func1<String, String> keyMapper) {
+        public TestCollapserWithMultipleResponses(CollapserTimer timer, int arg, int numEmits, Function<String, String> keyMapper) {
             this(timer, arg, numEmits, false, false, keyMapper, onMissingComplete);
         }
 
-        public TestCollapserWithMultipleResponses(CollapserTimer timer, int arg, int numEmits, boolean commandConstructionFails, boolean commandExecutionFails, Func1<String, String> keyMapper, Action1<CollapsedRequest<String, String>> onMissingResponseHandler) {
+        public TestCollapserWithMultipleResponses(CollapserTimer timer, int arg, int numEmits, boolean commandConstructionFails, boolean commandExecutionFails, Function<String, String> keyMapper, Action1<CollapsedRequest<String, String>> onMissingResponseHandler) {
             super(collapserKeyFromString(timer), Scope.REQUEST, timer, propsSetter, metrics);
             this.arg = arg + "";
             emitsPerArg.put(this.arg, numEmits);
@@ -1769,14 +1769,14 @@ public class HystrixObservableCollapserTest {
         //Data comes back in the form: 1:1, 1:2, 1:3, 2:2, 2:4, 2:6.
         //This method should use the first half of that string as the request arg
         @Override
-        protected Func1<String, String> getBatchReturnTypeKeySelector() {
+        protected Function<String, String> getBatchReturnTypeKeySelector() {
             return keyMapper;
 
         }
 
         @Override
-        protected Func1<String, String> getRequestArgumentKeySelector() {
-            return new Func1<String, String>() {
+        protected Function<String, String> getRequestArgumentKeySelector() {
+            return new Function<String, String>() {
 
                 @Override
                 public String call(String s) {
@@ -1793,8 +1793,8 @@ public class HystrixObservableCollapserTest {
         }
 
         @Override
-        protected Func1<String, String> getBatchReturnTypeToResponseTypeMapper() {
-            return new Func1<String, String>() {
+        protected Function<String, String> getBatchReturnTypeToResponseTypeMapper() {
+            return new Function<String, String>() {
 
                 @Override
                 public String call(String s) {

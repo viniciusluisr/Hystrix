@@ -24,10 +24,10 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.schedulers.Schedulers;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -50,7 +50,7 @@ public class HystrixConfigSseServletTest {
 
     HystrixConfigSseServlet servlet;
 
-    private final Observable<HystrixConfiguration> streamOfOnNexts = Observable.interval(100, TimeUnit.MILLISECONDS).map(new Func1<Long, HystrixConfiguration>() {
+    private final Observable<HystrixConfiguration> streamOfOnNexts = Observable.interval(100, TimeUnit.MILLISECONDS).map(new Function<Long, HystrixConfiguration>() {
         @Override
         public HystrixConfiguration call(Long timestamp) {
             return mockConfig;

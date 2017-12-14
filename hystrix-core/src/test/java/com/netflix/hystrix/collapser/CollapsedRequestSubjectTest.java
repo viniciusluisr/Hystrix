@@ -24,7 +24,7 @@ import java.util.concurrent.Future;
 
 import org.junit.Test;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 public class CollapsedRequestSubjectTest {
     @Test

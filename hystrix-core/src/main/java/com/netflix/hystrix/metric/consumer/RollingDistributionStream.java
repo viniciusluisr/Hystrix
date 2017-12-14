@@ -19,13 +19,15 @@ package com.netflix.hystrix.metric.consumer;
 import com.netflix.hystrix.metric.CachedValuesHistogram;
 import com.netflix.hystrix.metric.HystrixEvent;
 import com.netflix.hystrix.metric.HystrixEventStream;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import org.HdrHistogram.Histogram;
-import rx.Observable;
-import rx.Subscription;
-import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.subjects.BehaviorSubject;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.subjects.BehaviorSubject;
+import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,49 +49,46 @@ import java.util.concurrent.atomic.AtomicReference;
 public class RollingDistributionStream<Event extends HystrixEvent> {
     private AtomicReference<Subscription> rollingDistributionSubscription = new AtomicReference<Subscription>(null);
     private final BehaviorSubject<CachedValuesHistogram> rollingDistribution = BehaviorSubject.create(CachedValuesHistogram.backedBy(CachedValuesHistogram.getNewHistogram()));
-    private final Observable<CachedValuesHistogram> rollingDistributionStream;
+    private final Flowable<CachedValuesHistogram> rollingDistributionStream;
 
-    private static final Func2<Histogram, Histogram, Histogram> distributionAggregator = new Func2<Histogram, Histogram, Histogram>() {
+    private static final BiFunction<Histogram, Histogram, Histogram> distributionAggregator = (initialDistribution, distributionToAdd) -> {
+        initialDistribution.add(distributionToAdd);
+        return initialDistribution;
+    };
+
+    private static final Function<Observable<Histogram>, Observable<Histogram>> reduceWindowToSingleDistribution = new Function<Observable<Histogram>, Observable<Histogram>>() {
         @Override
-        public Histogram call(Histogram initialDistribution, Histogram distributionToAdd) {
-            initialDistribution.add(distributionToAdd);
-            return initialDistribution;
+        public Observable<Histogram> apply(Observable<Histogram> window) {
+            return window.reduce(distributionAggregator).toObservable();
         }
     };
 
-    private static final Func1<Observable<Histogram>, Observable<Histogram>> reduceWindowToSingleDistribution = new Func1<Observable<Histogram>, Observable<Histogram>>() {
-        @Override
-        public Observable<Histogram> call(Observable<Histogram> window) {
-            return window.reduce(distributionAggregator);
-        }
-    };
-
-    private static final Func1<Histogram, CachedValuesHistogram> cacheHistogramValues = new Func1<Histogram, CachedValuesHistogram>() {
+    private static final Function<Histogram, CachedValuesHistogram> cacheHistogramValues = new Function<Histogram, CachedValuesHistogram>() {
         @Override
         public CachedValuesHistogram call(Histogram histogram) {
             return CachedValuesHistogram.backedBy(histogram);
         }
     };
 
-    private static final Func1<Observable<CachedValuesHistogram>, Observable<List<CachedValuesHistogram>>> convertToList =
-            new Func1<Observable<CachedValuesHistogram>, Observable<List<CachedValuesHistogram>>>() {
+    private static final Function<Observable<CachedValuesHistogram>, Observable<List<CachedValuesHistogram>>> convertToList =
+            new Function<Observable<CachedValuesHistogram>, Observable<List<CachedValuesHistogram>>>() {
                 @Override
-                public Observable<List<CachedValuesHistogram>> call(Observable<CachedValuesHistogram> windowOf2) {
-                    return windowOf2.toList();
+                public Observable<List<CachedValuesHistogram>> apply(Observable<CachedValuesHistogram> windowOf2) {
+                    return windowOf2.toList().toObservable();
                 }
             };
 
     protected RollingDistributionStream(final HystrixEventStream<Event> stream, final int numBuckets, final int bucketSizeInMs,
-                                        final Func2<Histogram, Event, Histogram> addValuesToBucket) {
+                                        final BiFunction<Histogram, Event, Histogram> addValuesToBucket) {
         final List<Histogram> emptyDistributionsToStart = new ArrayList<Histogram>();
         for (int i = 0; i < numBuckets; i++) {
             emptyDistributionsToStart.add(CachedValuesHistogram.getNewHistogram());
         }
 
-        final Func1<Observable<Event>, Observable<Histogram>> reduceBucketToSingleDistribution = new Func1<Observable<Event>, Observable<Histogram>>() {
+        final Function<Observable<Event>, Observable<Histogram>> reduceBucketToSingleDistribution = new Function<Observable<Event>, Observable<Histogram>>() {
             @Override
-            public Observable<Histogram> call(Observable<Event> bucket) {
-                return bucket.reduce(CachedValuesHistogram.getNewHistogram(), addValuesToBucket);
+            public Observable<Histogram> apply(Observable<Event> bucket) {
+                return bucket.reduce(CachedValuesHistogram.getNewHistogram(), addValuesToBucket).toObservable();
             }
         };
 
@@ -102,11 +101,12 @@ public class RollingDistributionStream<Event extends HystrixEvent> {
                 .flatMap(reduceWindowToSingleDistribution)     //reduced stream: each OnNext is a single Histogram
                 .map(cacheHistogramValues)                     //convert to CachedValueHistogram (commonly-accessed values are cached)
                 .share()
+                .toFlowable(BackpressureStrategy.BUFFER)
                 .onBackpressureDrop();
     }
 
     public Observable<CachedValuesHistogram> observe() {
-        return rollingDistributionStream;
+        return rollingDistributionStream.toObservable();
     }
 
     public int getLatestMean() {
@@ -152,7 +152,8 @@ public class RollingDistributionStream<Event extends HystrixEvent> {
     public void unsubscribe() {
         Subscription s = rollingDistributionSubscription.get();
         if (s != null) {
-            s.unsubscribe();
+            s.cancel();
+//            s.unsubscribe();
             rollingDistributionSubscription.compareAndSet(s, null);
         }
     }

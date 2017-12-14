@@ -24,8 +24,8 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixEventType;
 import com.netflix.hystrix.strategy.properties.HystrixPropertiesCommandDefault;
 import org.junit.Test;
-import rx.Observable;
-import rx.observers.TestSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.observers.TestSubscriber;
 
 import java.util.ArrayList;
 import java.util.List;

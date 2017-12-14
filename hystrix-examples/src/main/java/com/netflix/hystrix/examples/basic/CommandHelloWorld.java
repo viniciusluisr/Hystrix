@@ -21,9 +21,9 @@ import java.util.concurrent.Future;
 
 import org.junit.Test;
 
-import rx.Observable;
-import rx.Observer;
-import rx.functions.Action1;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.functions.Consumer;
 
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;

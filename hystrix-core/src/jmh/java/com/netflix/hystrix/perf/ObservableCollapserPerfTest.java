@@ -40,12 +40,12 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.infra.Blackhole;
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.schedulers.Schedulers;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -98,7 +98,7 @@ public class ObservableCollapserPerfTest {
         private final static Map<String, Integer> emitsPerArg;
         private final int blackholeConsumption;
         private final boolean commandConstructionFails;
-        private final Func1<String, String> keyMapper;
+        private final Function<String, String> keyMapper;
         private final Action1<HystrixCollapser.CollapsedRequest<String, String>> onMissingResponseHandler;
 
         static {
@@ -111,7 +111,7 @@ public class ObservableCollapserPerfTest {
             emitsPerArg.put(this.arg, numResponsePerArg);
             this.blackholeConsumption = blackholeConsumption;
             commandConstructionFails = false;
-            keyMapper = new Func1<String, String>() {
+            keyMapper = new Function<String, String>() {
                 @Override
                 public String call(String s) {
                     return s.substring(0, s.indexOf(":"));
@@ -151,14 +151,14 @@ public class ObservableCollapserPerfTest {
         //Data comes back in the form: 1:1, 1:2, 1:3, 2:2, 2:4, 2:6.
         //This method should use the first half of that string as the request arg
         @Override
-        protected Func1<String, String> getBatchReturnTypeKeySelector() {
+        protected Function<String, String> getBatchReturnTypeKeySelector() {
             return keyMapper;
 
         }
 
         @Override
-        protected Func1<String, String> getRequestArgumentKeySelector() {
-            return new Func1<String, String>() {
+        protected Function<String, String> getRequestArgumentKeySelector() {
+            return new Function<String, String>() {
 
                 @Override
                 public String call(String s) {
@@ -175,8 +175,8 @@ public class ObservableCollapserPerfTest {
         }
 
         @Override
-        protected Func1<String, String> getBatchReturnTypeToResponseTypeMapper() {
-            return new Func1<String, String>() {
+        protected Function<String, String> getBatchReturnTypeToResponseTypeMapper() {
+            return new Function<String, String>() {
 
                 @Override
                 public String call(String s) {

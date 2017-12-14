@@ -22,7 +22,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 
-import rx.functions.Func1;
+import io.reactivex.functions.BiFunction;
 
 import com.netflix.config.DynamicIntProperty;
 import com.netflix.config.DynamicPropertyFactory;
@@ -54,7 +54,7 @@ public class HystrixRequestEventsSseController extends AbstractHystrixStreamCont
 	private static DynamicIntProperty maxConcurrentConnections = DynamicPropertyFactory.getInstance().getIntProperty("hystrix.config.stream.maxConcurrentConnections", 5);
 
 	public HystrixRequestEventsSseController() {
-		super(HystrixRequestEventsStream.getInstance().observe().map(new Func1<HystrixRequestEvents, String>() {
+		super(HystrixRequestEventsStream.getInstance().observe().map(new Function<HystrixRequestEvents, String>() {
 			@Override
 			public String call(HystrixRequestEvents requestEvents) {
 				return SerialHystrixRequestEvents.toJsonString(requestEvents);

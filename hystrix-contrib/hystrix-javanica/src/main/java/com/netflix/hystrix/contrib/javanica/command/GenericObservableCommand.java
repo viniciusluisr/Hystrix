@@ -28,10 +28,10 @@ import com.netflix.hystrix.contrib.javanica.exception.FallbackInvocationExceptio
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Completable;
-import rx.Observable;
-import rx.Single;
-import rx.functions.Func1;
+import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.functions.BiFunction;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.List;
@@ -71,7 +71,7 @@ public class GenericObservableCommand extends HystrixObservableCommand {
         try {
             Observable observable = toObservable(commandActions.getCommandAction().execute(executionType));
             result = observable
-                    .onErrorResumeNext(new Func1<Throwable, Observable>() {
+                    .onErrorResumeNext(new Function<Throwable, Observable>() {
                         @Override
                         public Observable call(Throwable throwable) {
                             if (isIgnorable(throwable)) {

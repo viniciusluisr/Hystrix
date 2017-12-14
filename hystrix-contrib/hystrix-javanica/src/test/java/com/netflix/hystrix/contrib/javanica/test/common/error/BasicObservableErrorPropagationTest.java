@@ -23,8 +23,8 @@ import com.netflix.hystrix.contrib.javanica.test.common.domain.User;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import rx.Observable;
-import rx.observers.TestSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.observers.TestSubscriber;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,9 +1,10 @@
 package com.netflix.hystrix;
 
-import rx.Observable;
-import rx.Subscription;
-import rx.functions.Action0;
-import rx.subjects.ReplaySubject;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.subjects.ReplaySubject;
+import org.reactivestreams.Subscription;
 
 public class HystrixCachedObservable<R> {
     protected final Subscription originalSubscription;
@@ -16,18 +17,18 @@ public class HystrixCachedObservable<R> {
                 .subscribe(replaySubject);
 
         this.cachedObservable = replaySubject
-                .doOnUnsubscribe(new Action0() {
+                .doOnDispose(new Action() {
                     @Override
-                    public void call() {
+                    public void run() {
                         outstandingSubscriptions--;
                         if (outstandingSubscriptions == 0) {
                             originalSubscription.unsubscribe();
                         }
                     }
                 })
-                .doOnSubscribe(new Action0() {
+                .doOnSubscribe(new Action() {
                     @Override
-                    public void call() {
+                    public void run() {
                         outstandingSubscriptions++;
                     }
                 });

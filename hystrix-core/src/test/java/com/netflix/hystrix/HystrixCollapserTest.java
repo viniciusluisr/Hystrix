@@ -52,13 +52,13 @@ import com.netflix.hystrix.strategy.HystrixPlugins;
 import com.netflix.hystrix.strategy.concurrency.HystrixContextRunnable;
 import com.netflix.hystrix.strategy.concurrency.HystrixRequestVariableHolder;
 import com.netflix.hystrix.util.HystrixTimer.TimerListener;
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.functions.Action0;
-import rx.observers.Subscribers;
-import rx.observers.TestSubscriber;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.observers.Subscribers;
+import io.reactivex.observers.TestSubscriber;
+import io.reactivex.schedulers.Schedulers;
 
 import static org.junit.Assert.*;
 

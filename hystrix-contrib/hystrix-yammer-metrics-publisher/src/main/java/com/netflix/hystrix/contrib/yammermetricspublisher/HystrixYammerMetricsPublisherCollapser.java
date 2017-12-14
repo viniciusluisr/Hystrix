@@ -25,7 +25,7 @@ import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.MetricsRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.functions.Func0;
+import io.reactivex.functions.Function;
 
 /**
  * Implementation of {@link HystrixMetricsPublisherCollapser} using Yammer Metrics

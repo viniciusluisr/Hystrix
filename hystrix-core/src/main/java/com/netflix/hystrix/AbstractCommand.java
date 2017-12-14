@@ -34,22 +34,22 @@ import com.netflix.hystrix.strategy.properties.HystrixPropertiesStrategy;
 import com.netflix.hystrix.strategy.properties.HystrixProperty;
 import com.netflix.hystrix.util.HystrixTimer;
 import com.netflix.hystrix.util.HystrixTimer.TimerListener;
+import io.reactivex.Notification;
+import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.subjects.ReplaySubject;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Notification;
-import rx.Observable;
-import rx.Observable.Operator;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.subjects.ReplaySubject;
-import rx.subscriptions.CompositeSubscription;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.BiFunction;
 
 import java.lang.ref.Reference;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -123,7 +123,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
     /* If this command executed and timed-out */
     protected final AtomicReference<TimedOutStatus> isCommandTimedOut = new AtomicReference<TimedOutStatus>(TimedOutStatus.NOT_EXECUTED);
-    protected volatile Action0 endCurrentThreadExecutingCommand;
+    protected volatile Action endCurrentThreadExecutingCommand;
 
     /**
      * Instance of RequestCache logic
@@ -327,9 +327,9 @@ import java.util.concurrent.atomic.AtomicReference;
         // eagerly kick off subscription
         final Subscription sourceSubscription = toObservable().subscribe(subject);
         // return the subject that can be subscribed to later while the execution has already started
-        return subject.doOnUnsubscribe(new Action0() {
+        return subject.doOnDispose(new Action() {
             @Override
-            public void call() {
+            public void run() {
                 sourceSubscription.unsubscribe();
             }
         });
@@ -366,7 +366,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
         //doOnCompleted handler already did all of the SUCCESS work
         //doOnError handler already did all of the FAILURE/TIMEOUT/REJECTION/BAD_REQUEST work
-        final Action0 terminateCommandCleanup = new Action0() {
+        final Action terminateCommandCleanup = new Action() {
 
             @Override
             public void call() {
@@ -379,7 +379,7 @@ import java.util.concurrent.atomic.AtomicReference;
         };
 
         //mark the command as CANCELLED and store the latency (in addition to standard cleanup)
-        final Action0 unsubscribeCommandCleanup = new Action0() {
+        final Action unsubscribeCommandCleanup = new Action() {
             @Override
             public void call() {
                 circuitBreaker.markNonSuccess();
@@ -411,7 +411,7 @@ import java.util.concurrent.atomic.AtomicReference;
             }
         };
 
-        final Func0<Observable<R>> applyHystrixSemantics = new Func0<Observable<R>>() {
+        final Callable<Observable<R>> applyHystrixSemantics = new Callable<Observable<R>>() {
             @Override
             public Observable<R> call() {
                 if (commandState.get().equals(CommandState.UNSUBSCRIBED)) {
@@ -421,7 +421,7 @@ import java.util.concurrent.atomic.AtomicReference;
             }
         };
 
-        final Func1<R, R> wrapWithAllOnNextHooks = new Func1<R, R>() {
+        final Function<R, R> wrapWithAllOnNextHooks = new Function<R, R>() {
             @Override
             public R call(R r) {
                 R afterFirstApplication = r;
@@ -441,7 +441,7 @@ import java.util.concurrent.atomic.AtomicReference;
             }
         };
 
-        final Action0 fireOnCompletedHook = new Action0() {
+        final Action fireOnCompletedHook = new Action() {
             @Override
             public void call() {
                 try {
@@ -452,7 +452,7 @@ import java.util.concurrent.atomic.AtomicReference;
             }
         };
 
-        return Observable.defer(new Func0<Observable<R>>() {
+        return Observable.defer(new Callable<Observable<R>>() {
             @Override
             public Observable<R> call() {
                  /* this is a stateful object so can only be used once */
@@ -509,8 +509,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
                 return afterCache
                         .doOnTerminate(terminateCommandCleanup)     // perform cleanup once (either on normal terminal state (this line), or unsubscribe (next line))
-                        .doOnUnsubscribe(unsubscribeCommandCleanup) // perform cleanup once
-                        .doOnCompleted(fireOnCompletedHook);
+                        .doOnDispose(unsubscribeCommandCleanup) // perform cleanup once
+                        .doOnComplete(fireOnCompletedHook);
             }
         });
     }
@@ -524,18 +524,18 @@ import java.util.concurrent.atomic.AtomicReference;
         if (circuitBreaker.attemptExecution()) {
             final TryableSemaphore executionSemaphore = getExecutionSemaphore();
             final AtomicBoolean semaphoreHasBeenReleased = new AtomicBoolean(false);
-            final Action0 singleSemaphoreRelease = new Action0() {
+            final Action singleSemaphoreRelease = new Action() {
                 @Override
-                public void call() {
+                public void run() {
                     if (semaphoreHasBeenReleased.compareAndSet(false, true)) {
                         executionSemaphore.release();
                     }
                 }
             };
 
-            final Action1<Throwable> markExceptionThrown = new Action1<Throwable>() {
+            final Consumer<Throwable> markExceptionThrown = new Consumer<Throwable>() {
                 @Override
-                public void call(Throwable t) {
+                public void accept(Throwable t) {
                     eventNotifier.markEvent(HystrixEventType.EXCEPTION_THROWN, commandKey);
                 }
             };
@@ -547,7 +547,7 @@ import java.util.concurrent.atomic.AtomicReference;
                     return executeCommandAndObserve(_cmd)
                             .doOnError(markExceptionThrown)
                             .doOnTerminate(singleSemaphoreRelease)
-                            .doOnUnsubscribe(singleSemaphoreRelease);
+                            .doOnDispose(singleSemaphoreRelease);
                 } catch (RuntimeException e) {
                     return Observable.error(e);
                 }
@@ -569,9 +569,9 @@ import java.util.concurrent.atomic.AtomicReference;
     private Observable<R> executeCommandAndObserve(final AbstractCommand<R> _cmd) {
         final HystrixRequestContext currentRequestContext = HystrixRequestContext.getContextForCurrentThread();
 
-        final Action1<R> markEmits = new Action1<R>() {
+        final Consumer<R> markEmits = new Consumer<R>() {
             @Override
-            public void call(R r) {
+            public void accept(R r) {
                 if (shouldOutputOnNextEvents()) {
                     executionResult = executionResult.addEvent(HystrixEventType.EMIT);
                     eventNotifier.markEvent(HystrixEventType.EMIT, commandKey);
@@ -586,9 +586,9 @@ import java.util.concurrent.atomic.AtomicReference;
             }
         };
 
-        final Action0 markOnCompleted = new Action0() {
+        final Action markOnCompleted = new Action() {
             @Override
-            public void call() {
+            public void run() {
                 if (!commandIsScalar()) {
                     long latency = System.currentTimeMillis() - executionResult.getStartTimestamp();
                     eventNotifier.markEvent(HystrixEventType.SUCCESS, commandKey);
@@ -599,9 +599,9 @@ import java.util.concurrent.atomic.AtomicReference;
             }
         };
 
-        final Func1<Throwable, Observable<R>> handleFallback = new Func1<Throwable, Observable<R>>() {
+        final Function<Throwable, Observable<R>> handleFallback = new Function<Throwable, Observable<R>>() {
             @Override
-            public Observable<R> call(Throwable t) {
+            public Observable<R> apply(Throwable t) {
                 circuitBreaker.markNonSuccess();
                 Exception e = getExceptionFromThrowable(t);
                 executionResult = executionResult.setExecutionException(e);
@@ -625,9 +625,9 @@ import java.util.concurrent.atomic.AtomicReference;
             }
         };
 
-        final Action1<Notification<? super R>> setRequestContext = new Action1<Notification<? super R>>() {
+        final Consumer<Notification<? super R>> setRequestContext = new Consumer<Notification<? super R>>() {
             @Override
-            public void call(Notification<? super R> rNotification) {
+            public void accept(Notification<? super R> rNotification) {
                 setRequestContextIfNeeded(currentRequestContext);
             }
         };
@@ -641,7 +641,7 @@ import java.util.concurrent.atomic.AtomicReference;
         }
 
         return execution.doOnNext(markEmits)
-                .doOnCompleted(markOnCompleted)
+                .doOnComplete(markOnCompleted)
                 .onErrorResumeNext(handleFallback)
                 .doOnEach(setRequestContext);
     }
@@ -649,7 +649,7 @@ import java.util.concurrent.atomic.AtomicReference;
     private Observable<R> executeCommandWithSpecifiedIsolation(final AbstractCommand<R> _cmd) {
         if (properties.executionIsolationStrategy().get() == ExecutionIsolationStrategy.THREAD) {
             // mark that we are executing in a thread (even if we end up being rejected we still were a THREAD execution and not SEMAPHORE)
-            return Observable.defer(new Func0<Observable<R>>() {
+            return Observable.defer(new Callable<Observable<R>>() {
                 @Override
                 public Observable<R> call() {
                     executionResult = executionResult.setExecutionOccurred();
@@ -687,9 +687,9 @@ import java.util.concurrent.atomic.AtomicReference;
                         return Observable.empty();
                     }
                 }
-            }).doOnTerminate(new Action0() {
+            }).doOnTerminate(new Action() {
                 @Override
-                public void call() {
+                public void run() {
                     if (threadState.compareAndSet(ThreadState.STARTED, ThreadState.TERMINAL)) {
                         handleThreadEnd(_cmd);
                     }
@@ -698,9 +698,9 @@ import java.util.concurrent.atomic.AtomicReference;
                     }
                     //if it was unsubscribed, then other cleanup handled it
                 }
-            }).doOnUnsubscribe(new Action0() {
+            }).doOnDispose(new Action() {
                 @Override
-                public void call() {
+                public void run() {
                     if (threadState.compareAndSet(ThreadState.STARTED, ThreadState.UNSUBSCRIBED)) {
                         handleThreadEnd(_cmd);
                     }
@@ -709,14 +709,14 @@ import java.util.concurrent.atomic.AtomicReference;
                     }
                     //if it was terminal, then other cleanup handled it
                 }
-            }).subscribeOn(threadPool.getScheduler(new Func0<Boolean>() {
+            }).subscribeOn(threadPool.getScheduler(new Callable<Boolean>() {
                 @Override
                 public Boolean call() {
                     return properties.executionIsolationThreadInterruptOnTimeout().get() && _cmd.isCommandTimedOut.get() == TimedOutStatus.TIMED_OUT;
                 }
             }));
         } else {
-            return Observable.defer(new Func0<Observable<R>>() {
+            return Observable.defer(new Callable<Observable<R>>() {
                 @Override
                 public Observable<R> call() {
                     executionResult = executionResult.setExecutionOccurred();
@@ -776,16 +776,16 @@ import java.util.concurrent.atomic.AtomicReference;
             if (properties.fallbackEnabled().get()) {
                 /* fallback behavior is permitted so attempt */
 
-                final Action1<Notification<? super R>> setRequestContext = new Action1<Notification<? super R>>() {
+                final Consumer<Notification<? super R>> setRequestContext = new Consumer<Notification<? super R>>() {
                     @Override
-                    public void call(Notification<? super R> rNotification) {
+                    public void accept(Notification<? super R> rNotification) {
                         setRequestContextIfNeeded(requestContext);
                     }
                 };
 
-                final Action1<R> markFallbackEmit = new Action1<R>() {
+                final Consumer<R> markFallbackEmit = new Consumer<R>() {
                     @Override
-                    public void call(R r) {
+                    public void accept(R r) {
                         if (shouldOutputOnNextEvents()) {
                             executionResult = executionResult.addEvent(HystrixEventType.FALLBACK_EMIT);
                             eventNotifier.markEvent(HystrixEventType.FALLBACK_EMIT, commandKey);
@@ -793,16 +793,16 @@ import java.util.concurrent.atomic.AtomicReference;
                     }
                 };
 
-                final Action0 markFallbackCompleted = new Action0() {
+                final Action markFallbackCompleted = new Action() {
                     @Override
-                    public void call() {
+                    public void run() {
                         long latency = System.currentTimeMillis() - executionResult.getStartTimestamp();
                         eventNotifier.markEvent(HystrixEventType.FALLBACK_SUCCESS, commandKey);
                         executionResult = executionResult.addEvent((int) latency, HystrixEventType.FALLBACK_SUCCESS);
                     }
                 };
 
-                final Func1<Throwable, Observable<R>> handleFallbackError = new Func1<Throwable, Observable<R>>() {
+                final Function<Throwable, Observable<R>> handleFallbackError = new Function<Throwable, Observable<R>>() {
                     @Override
                     public Observable<R> call(Throwable t) {
                         /* executionHook for all errors */
@@ -837,7 +837,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
                 final TryableSemaphore fallbackSemaphore = getFallbackSemaphore();
                 final AtomicBoolean semaphoreHasBeenReleased = new AtomicBoolean(false);
-                final Action0 singleSemaphoreRelease = new Action0() {
+                final Action singleSemaphoreRelease = new Action() {
                     @Override
                     public void call() {
                         if (semaphoreHasBeenReleased.compareAndSet(false, true)) {
@@ -905,9 +905,9 @@ import java.util.concurrent.atomic.AtomicReference;
         }
 
         return fromCache.toObservableWithStateCopiedInto(this)
-                .doOnTerminate(new Action0() {
+                .doOnTerminate(new Action() {
                     @Override
-                    public void call() {
+                    public void run() {
                         if (commandState.compareAndSet(CommandState.OBSERVABLE_CHAIN_CREATED, CommandState.TERMINAL)) {
                             cleanUpAfterResponseFromCache(false); //user code never ran
                         } else if (commandState.compareAndSet(CommandState.USER_CODE_EXECUTED, CommandState.TERMINAL)) {
@@ -915,9 +915,9 @@ import java.util.concurrent.atomic.AtomicReference;
                         }
                     }
                 })
-                .doOnUnsubscribe(new Action0() {
+                .doOnDispose(new Action() {
                     @Override
-                    public void call() {
+                    public void run() {
                         if (commandState.compareAndSet(CommandState.OBSERVABLE_CHAIN_CREATED, CommandState.UNSUBSCRIBED)) {
                             cleanUpAfterResponseFromCache(false); //user code never ran
                         } else if (commandState.compareAndSet(CommandState.USER_CODE_EXECUTED, CommandState.UNSUBSCRIBED)) {
@@ -1129,7 +1129,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
         @Override
         public Subscriber<? super R> call(final Subscriber<? super R> child) {
-            final CompositeSubscription s = new CompositeSubscription();
+            final CompositeDisposable s = new CompositeDisposable();
             // if the child unsubscribes we unsubscribe our parent as well
             child.add(s);
 
@@ -1184,7 +1184,7 @@ import java.util.concurrent.atomic.AtomicReference;
                     if (isNotTimedOut()) {
                         // stop timer and pass notification through
                         tl.clear();
-                        child.onCompleted();
+                        child.onComplete();
                     }
                 }
 
@@ -1390,7 +1390,7 @@ import java.util.concurrent.atomic.AtomicReference;
                     } catch (Throwable hookEx) {
                         logger.warn("Error calling HystrixCommandExecutionHook.onFallbackSuccess", hookEx);
                     }
-                    subscriber.onCompleted();
+                    subscriber.onComplete();
                 }
 
                 @Override
@@ -1422,7 +1422,7 @@ import java.util.concurrent.atomic.AtomicReference;
             return new Subscriber<R>(subscriber) {
                 @Override
                 public void onCompleted() {
-                    subscriber.onCompleted();
+                    subscriber.onComplete();
                 }
 
                 @Override
@@ -1465,7 +1465,7 @@ import java.util.concurrent.atomic.AtomicReference;
             return new Subscriber<R>(subscriber) {
                 @Override
                 public void onCompleted() {
-                    subscriber.onCompleted();
+                    subscriber.onComplete();
                 }
 
                 @Override

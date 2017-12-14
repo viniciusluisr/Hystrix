@@ -17,7 +17,7 @@ package com.netflix.hystrix.collapser;
 
 import java.util.Collection;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 import com.netflix.hystrix.HystrixCollapser.CollapsedRequest;
 import com.netflix.hystrix.HystrixCollapserKey;

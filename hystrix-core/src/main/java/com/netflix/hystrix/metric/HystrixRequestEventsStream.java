@@ -16,9 +16,11 @@
 package com.netflix.hystrix.metric;
 
 import com.netflix.hystrix.HystrixInvokableInfo;
-import rx.Observable;
-import rx.subjects.PublishSubject;
-import rx.subjects.Subject;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 
 import java.util.Collection;
 
@@ -26,12 +28,12 @@ import java.util.Collection;
  * Stream of requests, each of which contains a series of command executions
  */
 public class HystrixRequestEventsStream {
-    private final Subject<HystrixRequestEvents, HystrixRequestEvents> writeOnlyRequestEventsSubject;
-    private final Observable<HystrixRequestEvents> readOnlyRequestEvents;
+    private final Subject<HystrixRequestEvents> writeOnlyRequestEventsSubject;
+    private final Flowable<HystrixRequestEvents> readOnlyRequestEvents;
 
     /* package */ HystrixRequestEventsStream() {
         writeOnlyRequestEventsSubject = PublishSubject.create();
-        readOnlyRequestEvents = writeOnlyRequestEventsSubject.onBackpressureBuffer(1024);
+        readOnlyRequestEvents = writeOnlyRequestEventsSubject.toFlowable(BackpressureStrategy.BUFFER).onBackpressureBuffer(1024);
     }
 
     private static final HystrixRequestEventsStream INSTANCE = new HystrixRequestEventsStream();
@@ -41,7 +43,7 @@ public class HystrixRequestEventsStream {
     }
 
     public void shutdown() {
-        writeOnlyRequestEventsSubject.onCompleted();
+        writeOnlyRequestEventsSubject.onComplete();
     }
 
     public void write(Collection<HystrixInvokableInfo<?>> executions) {
@@ -50,6 +52,6 @@ public class HystrixRequestEventsStream {
     }
 
     public Observable<HystrixRequestEvents> observe() {
-        return readOnlyRequestEvents;
+        return readOnlyRequestEvents.toObservable();
     }
 }

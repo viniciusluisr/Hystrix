@@ -16,7 +16,7 @@
 package com.netflix.hystrix.contrib.javanica.annotation;
 
 import com.netflix.hystrix.HystrixObservable;
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * Hystrix observable command can be executed in two different ways:

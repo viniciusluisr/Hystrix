@@ -24,7 +24,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import rx.Observable;
+import io.reactivex.Observable;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.Future;

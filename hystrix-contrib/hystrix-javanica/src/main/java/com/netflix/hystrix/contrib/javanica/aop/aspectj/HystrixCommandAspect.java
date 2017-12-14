@@ -41,10 +41,10 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import rx.Completable;
-import rx.Observable;
-import rx.Single;
-import rx.functions.Func1;
+import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.functions.BiFunction;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -114,7 +114,7 @@ public class HystrixCommandAspect {
 
     private Object executeObservable(HystrixInvokable invokable, ExecutionType executionType, final MetaHolder metaHolder) {
         return mapObservable(((Observable) CommandExecutor.execute(invokable, executionType, metaHolder))
-                .onErrorResumeNext(new Func1<Throwable, Observable>() {
+                .onErrorResumeNext(new Function<Throwable, Observable>() {
                     @Override
                     public Observable call(Throwable throwable) {
                         if (throwable instanceof HystrixBadRequestException) {

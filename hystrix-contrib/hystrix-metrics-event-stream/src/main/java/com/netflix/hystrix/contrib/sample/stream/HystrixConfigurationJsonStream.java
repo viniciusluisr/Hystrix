@@ -26,8 +26,8 @@ import com.netflix.hystrix.config.HystrixConfiguration;
 import com.netflix.hystrix.config.HystrixConfigurationStream;
 import com.netflix.hystrix.config.HystrixThreadPoolConfiguration;
 import com.netflix.hystrix.metric.HystrixRequestEventsStream;
-import rx.Observable;
-import rx.functions.Func1;
+import io.reactivex.Observable;
+import io.reactivex.functions.BiFunction;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -47,11 +47,11 @@ import java.util.Map;
 public class HystrixConfigurationJsonStream {
 
     private static final JsonFactory jsonFactory = new JsonFactory();
-    private final Func1<Integer, Observable<HystrixConfiguration>> streamGenerator;
+    private final Function<Integer, Observable<HystrixConfiguration>> streamGenerator;
 
     @Deprecated //since 1.5.4
     public HystrixConfigurationJsonStream() {
-        this.streamGenerator = new Func1<Integer, Observable<HystrixConfiguration>>() {
+        this.streamGenerator = new Function<Integer, Observable<HystrixConfiguration>>() {
             @Override
             public Observable<HystrixConfiguration> call(Integer delay) {
                 return HystrixConfigurationStream.getInstance().observe();
@@ -60,11 +60,11 @@ public class HystrixConfigurationJsonStream {
     }
 
     @Deprecated //since 1.5.4
-    public HystrixConfigurationJsonStream(Func1<Integer, Observable<HystrixConfiguration>> streamGenerator) {
+    public HystrixConfigurationJsonStream(Function<Integer, Observable<HystrixConfiguration>> streamGenerator) {
         this.streamGenerator = streamGenerator;
     }
 
-    private static final Func1<HystrixConfiguration, String> convertToJson = new Func1<HystrixConfiguration, String>() {
+    private static final Function<HystrixConfiguration, String> convertToJson = new Function<HystrixConfiguration, String>() {
         @Override
         public String call(HystrixConfiguration hystrixConfiguration) {
             try {

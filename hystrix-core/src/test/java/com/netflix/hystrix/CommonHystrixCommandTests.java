@@ -24,11 +24,11 @@ import com.netflix.hystrix.strategy.HystrixPlugins;
 import com.netflix.hystrix.strategy.concurrency.HystrixContextScheduler;
 import com.netflix.hystrix.strategy.properties.HystrixProperty;
 import org.junit.Test;
-import rx.Observable;
-import rx.Scheduler;
-import rx.Subscriber;
-import rx.functions.Action1;
-import rx.functions.Func0;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.Subscriber;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -106,7 +106,7 @@ public abstract class CommonHystrixCommandTests<C extends AbstractTestHystrixCom
     }
 
     /**
-     * Run the command via {@link com.netflix.hystrix.HystrixCommand#observe()}, let the {@link rx.Observable} terminal
+     * Run the command via {@link com.netflix.hystrix.HystrixCommand#observe()}, let the {@link io.reactivex.Observable} terminal
      * states unblock a {@link java.util.concurrent.CountDownLatch} and then assert
      * @param command command to run
      * @param assertion assertions to check

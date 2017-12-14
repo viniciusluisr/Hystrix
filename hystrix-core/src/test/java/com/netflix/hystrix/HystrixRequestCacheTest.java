@@ -21,14 +21,14 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
-import rx.Observable;
-import rx.Subscriber;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
 
 import com.netflix.hystrix.strategy.concurrency.HystrixConcurrencyStrategy;
 import com.netflix.hystrix.strategy.concurrency.HystrixConcurrencyStrategyDefault;
 import com.netflix.hystrix.strategy.concurrency.HystrixRequestContext;
-import rx.Subscription;
-import rx.subjects.ReplaySubject;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.ReplaySubject;
 
 public class HystrixRequestCacheTest {
 

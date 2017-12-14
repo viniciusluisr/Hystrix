@@ -16,10 +16,9 @@
 package com.netflix.hystrix.metric;
 
 import com.netflix.hystrix.HystrixCollapserKey;
-import rx.Observable;
-import rx.subjects.PublishSubject;
-import rx.subjects.SerializedSubject;
-import rx.subjects.Subject;
+import io.reactivex.Observable;
+import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.Subject;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,7 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 public class HystrixCollapserEventStream implements HystrixEventStream<HystrixCollapserEvent> {
     private final HystrixCollapserKey collapserKey;
 
-    private final Subject<HystrixCollapserEvent, HystrixCollapserEvent> writeOnlyStream;
+    private final Subject<HystrixCollapserEvent> writeOnlyStream;
     private final Observable<HystrixCollapserEvent> readOnlyStream;
 
     private static final ConcurrentMap<String, HystrixCollapserEventStream> streams = new ConcurrentHashMap<String, HystrixCollapserEventStream>();
@@ -56,8 +55,7 @@ public class HystrixCollapserEventStream implements HystrixEventStream<HystrixCo
 
     HystrixCollapserEventStream(final HystrixCollapserKey collapserKey) {
         this.collapserKey = collapserKey;
-
-        this.writeOnlyStream = new SerializedSubject<HystrixCollapserEvent, HystrixCollapserEvent>(PublishSubject.<HystrixCollapserEvent>create());
+        this.writeOnlyStream = BehaviorSubject.<HystrixCollapserEvent>create().toSerialized();
         this.readOnlyStream = writeOnlyStream.share();
     }
 

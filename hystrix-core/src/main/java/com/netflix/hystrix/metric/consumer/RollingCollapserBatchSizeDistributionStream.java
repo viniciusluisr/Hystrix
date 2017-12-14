@@ -20,8 +20,8 @@ import com.netflix.hystrix.HystrixCollapserKey;
 import com.netflix.hystrix.HystrixCollapserProperties;
 import com.netflix.hystrix.metric.HystrixCollapserEvent;
 import com.netflix.hystrix.metric.HystrixCollapserEventStream;
+import io.reactivex.functions.BiFunction;
 import org.HdrHistogram.Histogram;
-import rx.functions.Func2;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,21 +41,18 @@ import java.util.concurrent.ConcurrentMap;
 public class RollingCollapserBatchSizeDistributionStream extends RollingDistributionStream<HystrixCollapserEvent> {
     private static final ConcurrentMap<String, RollingCollapserBatchSizeDistributionStream> streams = new ConcurrentHashMap<String, RollingCollapserBatchSizeDistributionStream>();
 
-    private static final Func2<Histogram, HystrixCollapserEvent, Histogram> addValuesToBucket = new Func2<Histogram, HystrixCollapserEvent, Histogram>() {
-        @Override
-        public Histogram call(Histogram initialDistribution, HystrixCollapserEvent event) {
-            switch (event.getEventType()) {
-                case ADDED_TO_BATCH:
-                    if (event.getCount() > -1) {
-                        initialDistribution.recordValue(event.getCount());
-                    }
-                    break;
-                default:
-                    //do nothing
-                    break;
-            }
-            return initialDistribution;
+    private static final BiFunction<Histogram, HystrixCollapserEvent, Histogram> addValuesToBucket = (initialDistribution, event) -> {
+        switch (event.getEventType()) {
+            case ADDED_TO_BATCH:
+                if (event.getCount() > -1) {
+                    initialDistribution.recordValue(event.getCount());
+                }
+                break;
+            default:
+                //do nothing
+                break;
         }
+        return initialDistribution;
     };
 
     public static RollingCollapserBatchSizeDistributionStream getInstance(HystrixCollapserKey collapserKey, HystrixCollapserProperties properties) {

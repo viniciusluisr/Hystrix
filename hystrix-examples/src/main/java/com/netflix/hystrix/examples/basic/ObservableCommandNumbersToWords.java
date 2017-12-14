@@ -19,8 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import rx.Observable;
-import rx.functions.Func1;
+import io.reactivex.Observable;
+import io.reactivex.functions.BiFunction;
 
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixObservableCommand;
@@ -59,7 +59,7 @@ class ObservableCommandNumbersToWords extends HystrixObservableCommand<NumberWor
 	@Override
 	protected Observable<NumberWord> construct()
 	{
-		return Observable.from(numbers).map(new Func1<Integer, NumberWord>()
+		return Observable.from(numbers).map(new Function<Integer, NumberWord>()
 		{
 			@Override
 			public NumberWord call(final Integer number)

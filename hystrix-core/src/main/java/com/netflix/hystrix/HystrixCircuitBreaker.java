@@ -20,8 +20,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.netflix.hystrix.HystrixCommandMetrics.HealthCounts;
-import rx.Subscriber;
-import rx.Subscription;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.subscribers.ResourceSubscriber;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 /**
  * Circuit-breaker logic that is hooked into {@link HystrixCommand} execution and will stop allowing executions if failures have gone past the defined threshold.
@@ -145,7 +148,7 @@ public interface HystrixCircuitBreaker {
 
         private final AtomicReference<Status> status = new AtomicReference<Status>(Status.CLOSED);
         private final AtomicLong circuitOpened = new AtomicLong(-1);
-        private final AtomicReference<Subscription> activeSubscription = new AtomicReference<Subscription>(null);
+        private final AtomicReference<ResourceSubscriber> activeSubscription = new AtomicReference<ResourceSubscriber>(null);
 
         protected HystrixCircuitBreakerImpl(HystrixCommandKey key, HystrixCommandGroupKey commandGroup, final HystrixCommandProperties properties, HystrixCommandMetrics metrics) {
             this.properties = properties;
@@ -164,7 +167,7 @@ public interface HystrixCircuitBreaker {
                     .observe()
                     .subscribe(new Subscriber<HealthCounts>() {
                         @Override
-                        public void onCompleted() {
+                        public void onComplete() {
 
                         }
 
@@ -205,12 +208,12 @@ public interface HystrixCircuitBreaker {
             if (status.compareAndSet(Status.HALF_OPEN, Status.CLOSED)) {
                 //This thread wins the race to close the circuit - it resets the stream to start it over from 0
                 metrics.resetStream();
-                Subscription previousSubscription = activeSubscription.get();
+                ResourceSubscriber previousSubscription = activeSubscription.get();
                 if (previousSubscription != null) {
-                    previousSubscription.unsubscribe();
+                    previousSubscription.dispose();
                 }
                 Subscription newSubscription = subscribeToStream();
-                activeSubscription.set(newSubscription);
+                activeSubscription.set((ResourceSubscriber) newSubscription);
                 circuitOpened.set(-1L);
             }
         }

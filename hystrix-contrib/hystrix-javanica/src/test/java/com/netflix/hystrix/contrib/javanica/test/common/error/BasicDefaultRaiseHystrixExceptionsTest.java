@@ -10,8 +10,8 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixException;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 
-import rx.Observable;
-import rx.observers.TestSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.observers.TestSubscriber;
 
 /**
  * Created by Mike Cowan

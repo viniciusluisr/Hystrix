@@ -15,12 +15,11 @@
  */
 package com.netflix.hystrix;
 
-import rx.Observable;
-import rx.schedulers.Schedulers;
-
 import com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
+import io.reactivex.Observable;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Common interface for executables that implement the Observable methods {@link #observe()} and {@link #toObservable()} so client code can treat them the same and combine in typed collections if desired.

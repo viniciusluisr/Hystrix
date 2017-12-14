@@ -28,12 +28,12 @@ import com.netflix.hystrix.strategy.concurrency.HystrixRequestContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.functions.Action0;
-import rx.functions.Func2;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Func2;
+import io.reactivex.schedulers.Schedulers;
 
 import java.util.ArrayList;
 import java.util.List;

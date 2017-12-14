@@ -19,10 +19,10 @@ import org.junit.Before;
 
 import com.netflix.hystrix.HystrixCommand.Setter;
 import org.junit.Test;
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Func0;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 import java.util.ArrayList;
 import java.util.List;

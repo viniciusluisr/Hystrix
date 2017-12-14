@@ -30,14 +30,14 @@ import com.netflix.hystrix.strategy.properties.HystrixProperty;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import rx.*;
-import rx.Observable.OnSubscribe;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.observers.TestSubscriber;
-import rx.schedulers.Schedulers;
+import io.reactivex.*;
+import io.reactivex.Observable.OnSubscribe;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.observers.TestSubscriber;
+import io.reactivex.schedulers.Schedulers;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -2785,7 +2785,7 @@ public class HystrixObservableCommandTest extends CommonHystrixCommandTests<Test
 
                     });
                     command1Ref.set(command1);
-                    results.add(command1.toObservable().map(new Func1<Boolean, Boolean>() {
+                    results.add(command1.toObservable().map(new Function<Boolean, Boolean>() {
 
                         @Override
                         public Boolean call(Boolean b) {
@@ -2835,7 +2835,7 @@ public class HystrixObservableCommandTest extends CommonHystrixCommandTests<Test
 
                     });
                     command2Ref.set(command2);
-                    results.add(command2.toObservable().map(new Func1<Boolean, Boolean>() {
+                    results.add(command2.toObservable().map(new Function<Boolean, Boolean>() {
 
                         @Override
                         public Boolean call(Boolean b) {
@@ -2885,7 +2885,7 @@ public class HystrixObservableCommandTest extends CommonHystrixCommandTests<Test
 
                     });
                     command3Ref.set(command3);
-                    results.add(command3.toObservable().map(new Func1<Boolean, Boolean>() {
+                    results.add(command3.toObservable().map(new Function<Boolean, Boolean>() {
 
                         @Override
                         public Boolean call(Boolean b) {

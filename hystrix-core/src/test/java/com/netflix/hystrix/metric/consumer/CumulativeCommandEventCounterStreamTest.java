@@ -27,9 +27,9 @@ import com.netflix.hystrix.strategy.concurrency.HystrixRequestContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.functions.Action0;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 
 import java.util.ArrayList;
 import java.util.List;

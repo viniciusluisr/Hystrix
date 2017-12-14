@@ -17,7 +17,7 @@ package com.netflix.hystrix.metric;
 
 import com.netflix.hystrix.HystrixCommandKey;
 import com.netflix.hystrix.HystrixThreadPoolKey;
-import rx.functions.Func1;
+import io.reactivex.functions.Function;
 
 /**
  * Data class that comprises the event stream for Hystrix command executions.
@@ -50,16 +50,16 @@ public abstract class HystrixCommandEvent implements HystrixEvent {
 
     public abstract boolean didCommandExecute();
 
-    public static final Func1<HystrixCommandEvent, Boolean> filterCompletionsOnly = new Func1<HystrixCommandEvent, Boolean>() {
+    public static final Function<HystrixCommandEvent, Boolean> filterCompletionsOnly = new Function<HystrixCommandEvent, Boolean>() {
         @Override
-        public Boolean call(HystrixCommandEvent commandEvent) {
+        public Boolean apply(HystrixCommandEvent commandEvent) {
             return commandEvent.isCommandCompletion();
         }
     };
 
-    public static final Func1<HystrixCommandEvent, Boolean> filterActualExecutions = new Func1<HystrixCommandEvent, Boolean>() {
+    public static final Function<HystrixCommandEvent, Boolean> filterActualExecutions = new Function<HystrixCommandEvent, Boolean>() {
         @Override
-        public Boolean call(HystrixCommandEvent commandEvent) {
+        public Boolean apply(HystrixCommandEvent commandEvent) {
             return commandEvent.didCommandExecute();
         }
     };

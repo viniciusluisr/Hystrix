@@ -20,8 +20,8 @@ import com.netflix.hystrix.HystrixCommandKey;
 import com.netflix.hystrix.HystrixEventType;
 import com.netflix.hystrix.HystrixThreadPoolKey;
 import org.junit.Test;
-import rx.Subscriber;
-import rx.functions.Action1;
+import io.reactivex.Subscriber;
+import io.reactivex.functions.Consumer;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;

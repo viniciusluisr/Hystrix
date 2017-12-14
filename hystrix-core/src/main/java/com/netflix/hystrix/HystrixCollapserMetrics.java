@@ -22,9 +22,10 @@ import com.netflix.hystrix.metric.consumer.RollingCollapserBatchSizeDistribution
 import com.netflix.hystrix.metric.consumer.RollingCollapserEventCounterStream;
 import com.netflix.hystrix.strategy.eventnotifier.HystrixEventNotifier;
 import com.netflix.hystrix.util.HystrixRollingNumberEvent;
+import io.reactivex.functions.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.functions.Func2;
+import io.reactivex.functions.BiFunction;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +47,7 @@ public class HystrixCollapserMetrics extends HystrixMetrics {
      * Get or create the {@link HystrixCollapserMetrics} instance for a given {@link HystrixCollapserKey}.
      * <p>
      * This is thread-safe and ensures only 1 {@link HystrixCollapserMetrics} per {@link HystrixCollapserKey}.
-     * 
+     *
      * @param key
      *            {@link HystrixCollapserKey} of {@link HystrixCollapser} instance requesting the {@link HystrixCollapserMetrics}
      * @return {@link HystrixCollapserMetrics}
@@ -72,7 +73,7 @@ public class HystrixCollapserMetrics extends HystrixMetrics {
 
     /**
      * All registered instances of {@link HystrixCollapserMetrics}
-     * 
+     *
      * @return {@code Collection<HystrixCollapserMetrics>}
      */
     public static Collection<HystrixCollapserMetrics> getInstances() {
@@ -81,9 +82,9 @@ public class HystrixCollapserMetrics extends HystrixMetrics {
 
     private static final HystrixEventType.Collapser[] ALL_EVENT_TYPES = HystrixEventType.Collapser.values();
 
-    public static final Func2<long[], HystrixCollapserEvent, long[]> appendEventToBucket = new Func2<long[], HystrixCollapserEvent, long[]>() {
+    public static final BiFunction<long[], HystrixCollapserEvent, long[]> appendEventToBucket = new BiFunction<long[], HystrixCollapserEvent, long[]>() {
         @Override
-        public long[] call(long[] initialCountArray, HystrixCollapserEvent collapserEvent) {
+        public long[] apply(long[] initialCountArray, HystrixCollapserEvent collapserEvent) {
             HystrixEventType.Collapser eventType = collapserEvent.getEventType();
             int count = collapserEvent.getCount();
             initialCountArray[eventType.ordinal()] += count;
@@ -91,9 +92,9 @@ public class HystrixCollapserMetrics extends HystrixMetrics {
         }
     };
 
-    public static final Func2<long[], long[], long[]> bucketAggregator = new Func2<long[], long[], long[]>() {
+    public static final BiFunction<long[], long[], long[]> bucketAggregator = new BiFunction<long[], long[], long[]>() {
         @Override
-        public long[] call(long[] cumulativeEvents, long[] bucketEventCounts) {
+        public long[] apply(long[] cumulativeEvents, long[] bucketEventCounts) {
             for (HystrixEventType.Collapser eventType: ALL_EVENT_TYPES) {
                 cumulativeEvents[eventType.ordinal()] += bucketEventCounts[eventType.ordinal()];
             }
@@ -127,7 +128,7 @@ public class HystrixCollapserMetrics extends HystrixMetrics {
 
     /**
      * {@link HystrixCollapserKey} these metrics represent.
-     * 
+     *
      * @return HystrixCollapserKey
      */
     public HystrixCollapserKey getCollapserKey() {

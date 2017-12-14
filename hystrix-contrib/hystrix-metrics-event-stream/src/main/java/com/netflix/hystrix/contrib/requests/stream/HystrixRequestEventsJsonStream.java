@@ -21,7 +21,7 @@ import com.netflix.hystrix.ExecutionResult;
 import com.netflix.hystrix.HystrixEventType;
 import com.netflix.hystrix.metric.HystrixRequestEvents;
 import com.netflix.hystrix.metric.HystrixRequestEventsStream;
-import rx.Observable;
+import io.reactivex.Observable;
 
 import java.io.IOException;
 import java.io.StringWriter;

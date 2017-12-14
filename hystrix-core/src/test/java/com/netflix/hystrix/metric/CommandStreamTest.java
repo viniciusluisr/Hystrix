@@ -26,7 +26,7 @@ import com.netflix.hystrix.HystrixEventType;
 import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
-import rx.functions.Func2;
+import io.reactivex.functions.Func2;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -18,8 +18,8 @@ package com.netflix.hystrix.contrib.javanica.command;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import rx.Observable;
-import rx.internal.operators.OperatorMulticast;
+import io.reactivex.Observable;
+import io.reactivex.internal.operators.OperatorMulticast;
 
 import java.util.List;
 import java.util.concurrent.Future;

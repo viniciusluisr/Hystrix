@@ -21,7 +21,7 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixEventType;
 import com.netflix.hystrix.metric.HystrixCommandCompletion;
 import com.netflix.hystrix.metric.HystrixCommandCompletionStream;
-import rx.functions.Func2;
+import io.reactivex.functions.BiFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,12 +44,7 @@ public class HealthCountsStream extends BucketedRollingCounterStream<HystrixComm
 
     private static final int NUM_EVENT_TYPES = HystrixEventType.values().length;
 
-    private static final Func2<HystrixCommandMetrics.HealthCounts, long[], HystrixCommandMetrics.HealthCounts> healthCheckAccumulator = new Func2<HystrixCommandMetrics.HealthCounts, long[], HystrixCommandMetrics.HealthCounts>() {
-        @Override
-        public HystrixCommandMetrics.HealthCounts call(HystrixCommandMetrics.HealthCounts healthCounts, long[] bucketEventCounts) {
-            return healthCounts.plus(bucketEventCounts);
-        }
-    };
+    private static final BiFunction<HystrixCommandMetrics.HealthCounts, long[], HystrixCommandMetrics.HealthCounts> healthCheckAccumulator = HystrixCommandMetrics.HealthCounts::plus;
 
 
     public static HealthCountsStream getInstance(HystrixCommandKey commandKey, HystrixCommandProperties properties) {
@@ -94,7 +89,7 @@ public class HealthCountsStream extends BucketedRollingCounterStream<HystrixComm
     }
 
     private HealthCountsStream(final HystrixCommandKey commandKey, final int numBuckets, final int bucketSizeInMs,
-                               Func2<long[], HystrixCommandCompletion, long[]> reduceCommandCompletion) {
+                               io.reactivex.functions.BiFunction<long[], HystrixCommandCompletion, long[]> reduceCommandCompletion) {
         super(HystrixCommandCompletionStream.getInstance(commandKey), numBuckets, bucketSizeInMs, reduceCommandCompletion, healthCheckAccumulator);
     }
 

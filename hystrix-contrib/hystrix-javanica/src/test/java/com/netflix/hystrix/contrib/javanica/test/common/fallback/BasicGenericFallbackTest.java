@@ -14,7 +14,7 @@ import org.junit.runner.RunWith;
 import org.slf4j.helpers.MessageFormatter;
 import org.springframework.test.context.junit4.rules.SpringClassRule;
 import org.springframework.test.context.junit4.rules.SpringMethodRule;
-import rx.Completable;
+import io.reactivex.Completable;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;

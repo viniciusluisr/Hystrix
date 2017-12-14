@@ -15,7 +15,7 @@
  */
 package com.netflix.hystrix.metric;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * Base interface for a stream of {@link com.netflix.hystrix.HystrixEventType}s.  Allows consumption by individual

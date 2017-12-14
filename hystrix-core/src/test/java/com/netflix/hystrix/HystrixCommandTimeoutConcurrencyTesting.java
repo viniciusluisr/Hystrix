@@ -17,7 +17,7 @@ package com.netflix.hystrix;
 import org.junit.Test;
 
 import com.netflix.hystrix.strategy.concurrency.HystrixRequestContext;
-import rx.Observable;
+import io.reactivex.Observable;
 
 import java.util.ArrayList;
 import java.util.List;

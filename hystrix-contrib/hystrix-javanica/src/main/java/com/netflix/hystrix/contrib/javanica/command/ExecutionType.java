@@ -16,9 +16,9 @@
 package com.netflix.hystrix.contrib.javanica.command;
 
 import com.google.common.collect.ImmutableSet;
-import rx.Completable;
-import rx.Observable;
-import rx.Single;
+import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 
 import java.util.Set;
 import java.util.concurrent.Future;

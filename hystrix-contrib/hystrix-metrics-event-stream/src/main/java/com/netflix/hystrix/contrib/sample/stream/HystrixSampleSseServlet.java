@@ -17,10 +17,10 @@ package com.netflix.hystrix.contrib.sample.stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

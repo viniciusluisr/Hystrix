@@ -24,7 +24,7 @@ import com.netflix.hystrix.strategy.properties.HystrixPropertiesFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import rx.functions.Action0;
+import io.reactivex.functions.Action;
 
 /**
  * Lifecycle management of Hystrix.
@@ -105,19 +105,19 @@ public class Hystrix {
 
     /**
      * 
-     * @return Action0 to perform the same work as `endCurrentThreadExecutingCommand()` but can be done from any thread
+     * @return Action to perform the same work as `endCurrentThreadExecutingCommand()` but can be done from any thread
      */
-    /* package */static Action0 startCurrentThreadExecutingCommand(HystrixCommandKey key) {
+    /* package */static Action startCurrentThreadExecutingCommand(HystrixCommandKey key) {
         final ConcurrentStack<HystrixCommandKey> list = currentCommand.get();
         try {
             list.push(key);
         } catch (Exception e) {
             logger.warn("Unable to record command starting", e);
         }
-        return new Action0() {
+        return new Action() {
 
             @Override
-            public void call() {
+            public void run() {
                 endCurrentThreadExecutingCommand(list);
             }
 

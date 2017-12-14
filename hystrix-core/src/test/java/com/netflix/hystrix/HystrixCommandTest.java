@@ -32,18 +32,18 @@ import com.netflix.hystrix.strategy.properties.HystrixProperty;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import rx.Observable;
-import rx.Observer;
-import rx.Scheduler;
-import rx.Subscriber;
-import rx.Subscription;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.observers.TestSubscriber;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.Scheduler;
+import io.reactivex.Subscriber;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Func2;
+import io.reactivex.observers.TestSubscriber;
+import io.reactivex.schedulers.Schedulers;
 
 import java.io.IOException;
 import java.util.List;
@@ -3958,7 +3958,7 @@ public class HystrixCommandTest extends CommonHystrixCommandTests<TestHystrixCom
                 })
                 .take(1)
                 .observeOn(Schedulers.io())
-                .map(new Func1<Integer, Integer>() {
+                .map(new Function<Integer, Integer>() {
                     @Override
                     public Integer call(Integer i) {
                         System.out.println(Thread.currentThread().getName() + " : " + System.currentTimeMillis() + " : Doing some more computation in the onNext!!");

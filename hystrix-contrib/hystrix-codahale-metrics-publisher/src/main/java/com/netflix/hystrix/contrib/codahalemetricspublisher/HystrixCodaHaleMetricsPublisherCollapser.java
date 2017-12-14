@@ -24,7 +24,7 @@ import com.netflix.hystrix.strategy.metrics.HystrixMetricsPublisherCollapser;
 import com.netflix.hystrix.util.HystrixRollingNumberEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.functions.Func0;
+import io.reactivex.functions.Function;
 
 /**
  * Implementation of {@link HystrixMetricsPublisherCollapser} using Coda Hale Metrics (https://github.com/codahale/metrics)

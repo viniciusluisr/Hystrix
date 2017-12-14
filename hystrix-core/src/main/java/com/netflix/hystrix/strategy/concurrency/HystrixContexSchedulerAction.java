@@ -17,30 +17,31 @@ package com.netflix.hystrix.strategy.concurrency;
 
 import java.util.concurrent.Callable;
 
-import rx.functions.Action0;
-import rx.functions.Func2;
+import io.reactivex.functions.Action;
+
+import io.reactivex.functions.BiFunction;
 
 import com.netflix.hystrix.strategy.HystrixPlugins;
 
 /**
- * Wrapper around {@link Func2} that manages the {@link HystrixRequestContext} initialization and cleanup for the execution of the {@link Func2}
+ * Wrapper around {@link BiFunction} that manages the {@link HystrixRequestContext} initialization and cleanup for the execution of the {@link Func2}
  * 
  * @param <T>
- *            Return type of {@link Func2}
+ *            Return type of {@link BiFunction}
  * 
  * @ExcludeFromJavadoc
  */
-public class HystrixContexSchedulerAction implements Action0 {
+public class HystrixContexSchedulerAction implements Action {
 
-    private final Action0 actual;
+    private final Action actual;
     private final HystrixRequestContext parentThreadState;
     private final Callable<Void> c;
 
-    public HystrixContexSchedulerAction(Action0 action) {
+    public HystrixContexSchedulerAction(Action action) {
         this(HystrixPlugins.getInstance().getConcurrencyStrategy(), action);
     }
 
-    public HystrixContexSchedulerAction(final HystrixConcurrencyStrategy concurrencyStrategy, Action0 action) {
+    public HystrixContexSchedulerAction(final HystrixConcurrencyStrategy concurrencyStrategy, Action action) {
         this.actual = action;
         this.parentThreadState = HystrixRequestContext.getContextForCurrentThread();
 
@@ -52,8 +53,8 @@ public class HystrixContexSchedulerAction implements Action0 {
                 try {
                     // set the state of this thread to that of its parent
                     HystrixRequestContext.setContextOnCurrentThread(parentThreadState);
-                    // execute actual Action0 with the state of the parent
-                    actual.call();
+                    // execute actual Action with the state of the parent
+                    actual.run();
                     return null;
                 } finally {
                     // restore this thread back to its original state
@@ -64,11 +65,11 @@ public class HystrixContexSchedulerAction implements Action0 {
     }
 
     @Override
-    public void call() {
+    public void run() {
         try {
             c.call();
         } catch (Exception e) {
-            throw new RuntimeException("Failed executing wrapped Action0", e);
+            throw new RuntimeException("Failed executing wrapped Action", e);
         }
     }
 

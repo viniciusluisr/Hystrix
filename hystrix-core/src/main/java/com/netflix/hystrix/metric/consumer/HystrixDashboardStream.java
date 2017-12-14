@@ -20,9 +20,8 @@ import com.netflix.config.DynamicPropertyFactory;
 import com.netflix.hystrix.HystrixCollapserMetrics;
 import com.netflix.hystrix.HystrixCommandMetrics;
 import com.netflix.hystrix.HystrixThreadPoolMetrics;
-import rx.Observable;
-import rx.functions.Action0;
-import rx.functions.Func1;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HystrixDashboardStream {
     final int delayInMs;
-    final Observable<DashboardData> singleSource;
+    final Flowable<DashboardData> singleSource;
     final AtomicBoolean isSourceCurrentlySubscribed = new AtomicBoolean(false);
 
     private static final DynamicIntProperty dataEmissionIntervalInMs =
@@ -38,29 +37,14 @@ public class HystrixDashboardStream {
 
     private HystrixDashboardStream(int delayInMs) {
         this.delayInMs = delayInMs;
-        this.singleSource = Observable.interval(delayInMs, TimeUnit.MILLISECONDS)
-                .map(new Func1<Long, DashboardData>() {
-                    @Override
-                    public DashboardData call(Long timestamp) {
-                        return new DashboardData(
-                                HystrixCommandMetrics.getInstances(),
-                                HystrixThreadPoolMetrics.getInstances(),
-                                HystrixCollapserMetrics.getInstances()
-                        );
-                    }
-                })
-                .doOnSubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        isSourceCurrentlySubscribed.set(true);
-                    }
-                })
-                .doOnUnsubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        isSourceCurrentlySubscribed.set(false);
-                    }
-                })
+        this.singleSource = Flowable.interval(delayInMs, TimeUnit.MILLISECONDS)
+                .map(timestamp -> new DashboardData(
+                        HystrixCommandMetrics.getInstances(),
+                        HystrixThreadPoolMetrics.getInstances(),
+                        HystrixCollapserMetrics.getInstances()
+                ))
+                .doOnSubscribe(disposable -> isSourceCurrentlySubscribed.set(true))
+                .doOnTerminate(() -> isSourceCurrentlySubscribed.set(false))
                 .share()
                 .onBackpressureDrop();
     }
@@ -81,7 +65,7 @@ public class HystrixDashboardStream {
      * Return a ref-counted stream that will only do work when at least one subscriber is present
      */
     public Observable<DashboardData> observe() {
-        return singleSource;
+        return singleSource.toObservable();
     }
 
     public boolean isSourceCurrentlySubscribed() {

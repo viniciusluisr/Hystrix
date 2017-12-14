@@ -21,7 +21,7 @@ import com.netflix.hystrix.HystrixCollapserProperties;
 import com.netflix.hystrix.HystrixEventType;
 import com.netflix.hystrix.metric.HystrixCollapserEvent;
 import com.netflix.hystrix.metric.HystrixCollapserEventStream;
-import rx.functions.Func2;
+import io.reactivex.functions.BiFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -77,8 +77,8 @@ public class CumulativeCollapserEventCounterStream extends BucketedCumulativeCou
     }
 
     private CumulativeCollapserEventCounterStream(HystrixCollapserKey collapserKey, int numCounterBuckets, int counterBucketSizeInMs,
-                                                Func2<long[], HystrixCollapserEvent, long[]> appendEventToBucket,
-                                                Func2<long[], long[], long[]> reduceBucket) {
+                                                BiFunction<long[], HystrixCollapserEvent, long[]> appendEventToBucket,
+                                                BiFunction<long[], long[], long[]> reduceBucket) {
         super(HystrixCollapserEventStream.getInstance(collapserKey), numCounterBuckets, counterBucketSizeInMs, appendEventToBucket, reduceBucket);
     }
 

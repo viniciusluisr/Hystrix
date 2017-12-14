@@ -15,7 +15,7 @@
  */
 package com.netflix.hystrix;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 import com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy;
 import com.netflix.hystrix.strategy.executionhook.HystrixCommandExecutionHook;

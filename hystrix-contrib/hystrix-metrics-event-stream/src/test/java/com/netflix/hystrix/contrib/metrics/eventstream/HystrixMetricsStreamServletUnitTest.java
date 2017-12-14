@@ -21,8 +21,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import rx.Observable;
-import rx.functions.Func1;
+import io.reactivex.Observable;
+import io.reactivex.functions.BiFunction;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -46,7 +46,7 @@ public class HystrixMetricsStreamServletUnitTest {
     HystrixMetricsStreamServlet servlet;
 
     private final Observable<HystrixDashboardStream.DashboardData> streamOfOnNexts =
-            Observable.interval(100, TimeUnit.MILLISECONDS).map(new Func1<Long, HystrixDashboardStream.DashboardData>() {
+            Observable.interval(100, TimeUnit.MILLISECONDS).map(new Function<Long, HystrixDashboardStream.DashboardData>() {
                 @Override
                 public HystrixDashboardStream.DashboardData call(Long timestamp) {
                     return mockDashboard;

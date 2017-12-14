@@ -27,19 +27,22 @@ import com.netflix.hystrix.strategy.concurrency.HystrixRequestContext;
 import com.netflix.hystrix.strategy.metrics.HystrixMetricsPublisherFactory;
 import com.netflix.hystrix.strategy.properties.HystrixPropertiesFactory;
 import com.netflix.hystrix.strategy.properties.HystrixPropertiesStrategy;
+import io.reactivex.ObservableSource;
+import io.reactivex.Single;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.Scheduler;
-import rx.Subscription;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func0;
-import rx.schedulers.Schedulers;
-import rx.subjects.ReplaySubject;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.ReplaySubject;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
@@ -164,13 +167,13 @@ public abstract class HystrixCollapser<BatchReturnType, ResponseType, RequestArg
 
             @Override
             public Observable<Void> mapResponseToRequests(Observable<BatchReturnType> batchResponse, final Collection<CollapsedRequest<ResponseType, RequestArgumentType>> requests) {
-                return batchResponse.single().doOnNext(new Action1<BatchReturnType>() {
+                return batchResponse.doOnNext(new Consumer<BatchReturnType>() {
                     @Override
-                    public void call(BatchReturnType batchReturnType) {
+                    public void accept(BatchReturnType batchReturnType) {
                         // this is a blocking call in HystrixCollapser
                         self.mapResponseToRequests(batchReturnType, requests);
                     }
-                }).ignoreElements().cast(Void.class);
+                }).cast(Void.class);
             }
 
             @Override
@@ -326,7 +329,7 @@ public abstract class HystrixCollapser<BatchReturnType, ResponseType, RequestArg
      * <li>When using {@link ExecutionIsolationStrategy#THREAD} this defaults to using {@link Schedulers#computation()} for callbacks.</li>
      * <li>When using {@link ExecutionIsolationStrategy#SEMAPHORE} this defaults to using {@link Schedulers#immediate()} for callbacks.</li>
      * </ul>
-     * Use {@link #toObservable(rx.Scheduler)} to schedule the callback differently.
+     * Use {@link #toObservable(io.reactivex.Scheduler)} to schedule the callback differently.
      * <p>
      * See https://github.com/Netflix/RxJava/wiki for more information.
      * 
@@ -339,9 +342,9 @@ public abstract class HystrixCollapser<BatchReturnType, ResponseType, RequestArg
         // eagerly kick off subscription
         final Subscription underlyingSubscription = toObservable().subscribe(subject);
         // return the subject that can be subscribed to later while the execution has already started
-        return subject.doOnUnsubscribe(new Action0() {
+        return subject.doOnUnsubscribe(new Action() {
             @Override
-            public void call() {
+            public void run() {
                 underlyingSubscription.unsubscribe();
             }
         });
@@ -379,7 +382,7 @@ public abstract class HystrixCollapser<BatchReturnType, ResponseType, RequestArg
      *         {@link #mapResponseToRequests} to transform the {@code <BatchReturnType>} into {@code <ResponseType>}
      */
     public Observable<ResponseType> toObservable(Scheduler observeOn) {
-        return Observable.defer(new Func0<Observable<ResponseType>>() {
+        return Observable.defer(new Callable<ObservableSource<? extends ResponseType>>() {
             @Override
             public Observable<ResponseType> call() {
                 final boolean isRequestCacheEnabled = getProperties().requestCacheEnabled().get();
@@ -455,7 +458,6 @@ public abstract class HystrixCollapser<BatchReturnType, ResponseType, RequestArg
      */
     public Future<ResponseType> queue() {
         return toObservable()
-                .toBlocking()
                 .toFuture();
     }
 

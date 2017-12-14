@@ -21,8 +21,8 @@ import com.netflix.hystrix.contrib.sample.stream.HystrixSampleSseServlet;
 import com.netflix.hystrix.metric.HystrixRequestEvents;
 import com.netflix.hystrix.metric.HystrixRequestEventsStream;
 import com.netflix.hystrix.serial.SerialHystrixRequestEvents;
-import rx.Observable;
-import rx.functions.Func1;
+import io.reactivex.Observable;
+import io.reactivex.functions.BiFunction;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -42,7 +42,7 @@ public class HystrixRequestEventsSseServlet extends HystrixSampleSseServlet {
     }
 
     /* package-private */ HystrixRequestEventsSseServlet(Observable<HystrixRequestEvents> sampleStream, int pausePollerThreadDelayInMs) {
-        super(sampleStream.map(new Func1<HystrixRequestEvents, String>() {
+        super(sampleStream.map(new Function<HystrixRequestEvents, String>() {
             @Override
             public String call(HystrixRequestEvents requestEvents) {
                 return SerialHystrixRequestEvents.toJsonString(requestEvents);

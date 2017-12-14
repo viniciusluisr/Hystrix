@@ -28,7 +28,7 @@ import com.netflix.hystrix.HystrixThreadPoolMetrics;
 import com.netflix.hystrix.metric.consumer.HystrixDashboardStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.functions.Func0;
+import io.reactivex.functions.Function;
 
 import java.io.IOException;
 import java.io.StringWriter;

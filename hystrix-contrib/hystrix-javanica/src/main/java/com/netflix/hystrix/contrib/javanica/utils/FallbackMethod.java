@@ -24,7 +24,7 @@ import com.netflix.hystrix.contrib.javanica.command.ExecutionType;
 import com.netflix.hystrix.contrib.javanica.exception.FallbackDefinitionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import rx.Completable;
+import io.reactivex.Completable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

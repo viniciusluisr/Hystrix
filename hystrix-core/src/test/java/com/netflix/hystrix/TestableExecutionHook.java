@@ -18,7 +18,7 @@ package com.netflix.hystrix;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import com.netflix.hystrix.exception.HystrixRuntimeException.FailureType;
 import com.netflix.hystrix.strategy.executionhook.HystrixCommandExecutionHook;
-import rx.Notification;
+import io.reactivex.Notification;
 
 import java.util.ArrayList;
 import java.util.List;

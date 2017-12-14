@@ -17,9 +17,13 @@ package com.netflix.hystrix.metric.consumer;
 
 import com.netflix.hystrix.metric.HystrixEvent;
 import com.netflix.hystrix.metric.HystrixEventStream;
-import rx.Observable;
-import rx.functions.Action0;
-import rx.functions.Func2;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Func2;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,35 +35,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <Output> type of data emitted to stream subscribers (often is the same as A but does not have to be)
  */
 public abstract class BucketedCumulativeCounterStream<Event extends HystrixEvent, Bucket, Output> extends BucketedCounterStream<Event, Bucket, Output> {
-    private Observable<Output> sourceStream;
+    private Flowable<Output> sourceStream;
     private final AtomicBoolean isSourceCurrentlySubscribed = new AtomicBoolean(false);
 
     protected BucketedCumulativeCounterStream(HystrixEventStream<Event> stream, int numBuckets, int bucketSizeInMs,
-                                              Func2<Bucket, Event, Bucket> reduceCommandCompletion,
-                                              Func2<Output, Bucket, Output> reduceBucket) {
+                                              BiFunction<Bucket, Event, Bucket> reduceCommandCompletion,
+                                              BiFunction<Output, Bucket, Output> reduceBucket) {
         super(stream, numBuckets, bucketSizeInMs, reduceCommandCompletion);
 
         this.sourceStream = bucketedStream
                 .scan(getEmptyOutputValue(), reduceBucket)
                 .skip(numBuckets)
-                .doOnSubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        isSourceCurrentlySubscribed.set(true);
-                    }
-                })
-                .doOnUnsubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        isSourceCurrentlySubscribed.set(false);
-                    }
-                })
+                .doOnSubscribe(disposable -> isSourceCurrentlySubscribed.set(false))
+                .doOnTerminate(() -> isSourceCurrentlySubscribed.set(false))
                 .share()                        //multiple subscribers should get same data
                 .onBackpressureDrop();          //if there are slow consumers, data should not buffer
     }
 
     @Override
     public Observable<Output> observe() {
-        return sourceStream;
+        return sourceStream.toObservable();
     }
 }

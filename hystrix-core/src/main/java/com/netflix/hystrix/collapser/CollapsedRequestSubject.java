@@ -16,9 +16,9 @@
 package com.netflix.hystrix.collapser;
 
 import com.netflix.hystrix.HystrixCollapser.CollapsedRequest;
-import rx.Observable;
-import rx.functions.Action0;
-import rx.subjects.ReplaySubject;
+import io.reactivex.Observable;
+import io.reactivex.functions.Action;
+import io.reactivex.subjects.ReplaySubject;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 4) {@link #setComplete()}: mark that no more values will be emitted.  Should be used in conjunction with {@link #emitResponse(T)}.  equivalent to OnCompleted()
  *
  * <p>
- * This is an internal implementation of CollapsedRequest<T, R> functionality.  Instead of directly extending {@link rx.Observable},
+ * This is an internal implementation of CollapsedRequest<T, R> functionality.  Instead of directly extending {@link io.reactivex.Observable},
  * it provides a {@link #toObservable()} method
  * <p>
  *
@@ -58,19 +58,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
             this.argument = arg;
         }
         this.subjectWithAccounting = subject
-                .doOnSubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        outstandingSubscriptions++;
-                    }
-                })
-                .doOnUnsubscribe(new Action0() {
-                    @Override
-                    public void call() {
-                        outstandingSubscriptions--;
-                        if (outstandingSubscriptions == 0) {
-                            containingBatch.remove(arg);
-                        }
+                .doOnSubscribe(a -> outstandingSubscriptions++)
+                .doOnDispose(() -> {
+                    outstandingSubscriptions--;
+                    if (outstandingSubscriptions == 0) {
+                        containingBatch.remove(arg);
                     }
                 });
     }
@@ -102,7 +94,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
         if (!isTerminated()) {
             subject.onNext(response);
             valueSet.set(true);
-            subject.onCompleted();
+            subject.onComplete();
         } else {
             throw new IllegalStateException("Response has already terminated so response can not be set : " + response);
         }
@@ -125,7 +117,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
     @Override
     public void setComplete() {
         if (!isTerminated()) {
-            subject.onCompleted();
+            subject.onComplete();
         }
     }
 
@@ -176,7 +168,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
     }
 
     private boolean isTerminated() {
-        return (subject.hasCompleted() || subject.hasThrowable());
+        return (subject.hasComplete() || subject.hasThrowable());
     }
 
     public Observable<T> toObservable() {

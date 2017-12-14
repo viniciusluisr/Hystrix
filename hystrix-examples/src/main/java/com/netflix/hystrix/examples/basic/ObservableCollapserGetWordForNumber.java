@@ -33,11 +33,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import rx.Observable;
-import rx.functions.Func0;
-import rx.functions.Func1;
-import rx.observers.TestSubscriber;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.observers.TestSubscriber;
+import io.reactivex.schedulers.Schedulers;
 
 import com.netflix.hystrix.HystrixCollapser.CollapsedRequest;
 import com.netflix.hystrix.HystrixObservableCollapser;
@@ -96,11 +96,11 @@ public class ObservableCollapserGetWordForNumber extends HystrixObservableCollap
 	}
 
 	@Override
-	protected Func1<NumberWord, Integer> getBatchReturnTypeKeySelector()
+	protected Function<NumberWord, Integer> getBatchReturnTypeKeySelector()
 	{
 		// Java 8: (final NumberWord nw) -> nw.getNumber();
 
-		return new Func1<NumberWord, Integer>()
+		return new Function<NumberWord, Integer>()
 		{
 			@Override
 			public Integer call(final NumberWord nw)
@@ -111,11 +111,11 @@ public class ObservableCollapserGetWordForNumber extends HystrixObservableCollap
 	}
 
 	@Override
-	protected Func1<Integer, Integer> getRequestArgumentKeySelector()
+	protected Function<Integer, Integer> getRequestArgumentKeySelector()
 	{
 		// Java 8: return (final Integer no) -> no;
 
-		return new Func1<Integer, Integer>()
+		return new Function<Integer, Integer>()
 		{
 			@Override
 			public Integer call(final Integer no)
@@ -127,11 +127,11 @@ public class ObservableCollapserGetWordForNumber extends HystrixObservableCollap
 	}
 
 	@Override
-	protected Func1<NumberWord, String> getBatchReturnTypeToResponseTypeMapper()
+	protected Function<NumberWord, String> getBatchReturnTypeToResponseTypeMapper()
 	{
 		// Java 8: return (final NumberWord nw) -> nw.getWord();
 
-		return new Func1<NumberWord, String>()
+		return new Function<NumberWord, String>()
 		{
 			@Override
 			public String call(final NumberWord nw)

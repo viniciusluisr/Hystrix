@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Rule;
 import org.junit.Test;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 public class HystrixRequestLogTest {
 

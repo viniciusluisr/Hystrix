@@ -21,7 +21,7 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixEventType;
 import com.netflix.hystrix.metric.HystrixCommandCompletion;
 import com.netflix.hystrix.metric.HystrixCommandCompletionStream;
-import rx.functions.Func2;
+import io.reactivex.functions.BiFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -78,8 +78,8 @@ public class CumulativeCommandEventCounterStream extends BucketedCumulativeCount
     }
 
     private CumulativeCommandEventCounterStream(HystrixCommandKey commandKey, int numCounterBuckets, int counterBucketSizeInMs,
-                                                Func2<long[], HystrixCommandCompletion, long[]> reduceCommandCompletion,
-                                                Func2<long[], long[], long[]> reduceBucket) {
+                                                BiFunction<long[], HystrixCommandCompletion, long[]> reduceCommandCompletion,
+                                                BiFunction<long[], long[], long[]> reduceBucket) {
         super(HystrixCommandCompletionStream.getInstance(commandKey), numCounterBuckets, counterBucketSizeInMs, reduceCommandCompletion, reduceBucket);
     }
 

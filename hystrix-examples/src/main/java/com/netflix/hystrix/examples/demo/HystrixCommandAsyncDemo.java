@@ -28,14 +28,14 @@ import com.netflix.hystrix.HystrixCommandMetrics.HealthCounts;
 import com.netflix.hystrix.HystrixRequestLog;
 import com.netflix.hystrix.strategy.concurrency.HystrixContextRunnable;
 import com.netflix.hystrix.strategy.concurrency.HystrixRequestContext;
-import rx.Observable;
-import rx.Subscriber;
-import rx.functions.Action0;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.plugins.RxJavaPlugins;
-import rx.plugins.RxJavaSchedulersHook;
+import io.reactivex.Observable;
+import io.reactivex.Subscriber;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Func2;
+import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.plugins.RxJavaSchedulersHook;
 
 /**
  * Executable client that demonstrates the lifecycle, metrics, request log and behavior of HystrixCommands.
@@ -143,7 +143,7 @@ public class HystrixCommandAsyncDemo {
         try {
             Observable<UserAccount> user = new GetUserAccountCommand(new HttpCookie("mockKey", "mockValueFromHttpRequest")).observe();
             /* fetch the payment information (asynchronously) for the user so the credit card payment can proceed */
-            Observable<PaymentInformation> paymentInformation = user.flatMap(new Func1<UserAccount, Observable<PaymentInformation>>() {
+            Observable<PaymentInformation> paymentInformation = user.flatMap(new Function<UserAccount, Observable<PaymentInformation>>() {
                 @Override
                 public Observable<PaymentInformation> call(UserAccount userAccount) {
                     return new GetPaymentInformationCommand(userAccount).observe();
@@ -159,7 +159,7 @@ public class HystrixCommandAsyncDemo {
                 public Pair<PaymentInformation, Order> call(PaymentInformation paymentInformation, Order order) {
                     return new Pair<PaymentInformation, Order>(paymentInformation, order);
                 }
-            }).flatMap(new Func1<Pair<PaymentInformation, Order>, Observable<CreditCardAuthorizationResult>>() {
+            }).flatMap(new Function<Pair<PaymentInformation, Order>, Observable<CreditCardAuthorizationResult>>() {
                 @Override
                 public Observable<CreditCardAuthorizationResult> call(Pair<PaymentInformation, Order> pair) {
                     return new CreditCardCommand(pair.b(), pair.a(), new BigDecimal(123.45)).observe();
